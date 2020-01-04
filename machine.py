@@ -2,10 +2,11 @@ import dnslib
 from socketserver import UDPServer, BaseRequestHandler
 import threading
 
-class Machine(BaseRequestHandler):
+class IndividualClientHandler(BaseRequestHandler):
     """ This represents a machine being controlled by Provenance"""
 
 
+    """ Builtin Functions"""
     def __init__(self, request, client_address, server, name):
         self.server = server
         self.request = request
@@ -22,11 +23,17 @@ class Machine(BaseRequestHandler):
     def __repr__(self):
         return f"{self.name}{{{self.ip}, {self.record_type}}}"
 
+    """ SubClass Functions"""
     def handle(self):
-        data = self.request[0]
-        addr, port = self.client_address
-        print(f"Data Received From {self.name}:", data)
+        data = self.get_data()
+        request = dnslib.DNSRecord.parse(data)
+        print(request)
 
+    def get_data(self):
+        return self.request[0].strip()
+
+
+    """ Provenance Specific Functions"""
     def queue_cmd(self, cmd):
         self.queued_commands.append(cmd)
 

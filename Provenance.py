@@ -7,7 +7,7 @@ Description:	The main running file for the Provenance C2
 import dnslib
 from socketserver import UDPServer, BaseRequestHandler
 import threading
-from machine import Machine
+from machine import IndividualClientHandler
 
 
 class ProvenanceServer(UDPServer):
@@ -41,10 +41,15 @@ class ProvenanceServer(UDPServer):
 		return self.machines[addr].handle()
 
 def main():
-	
-	with ProvenanceServer(("localhost", 5555), Machine) as server:
-		print("Starting Server...")
-		server.serve_forever()
+	socket = ("127.0.0.1", 53)	
+	with ProvenanceServer(socket, IndividualClientHandler) as server:
+		try:
+			print(f"Starting Server on {socket[0]}:{socket[1]}...")
+			server.serve_forever()
+		except KeyboardException:
+			pass
+		finally:
+			server.shutdown()
 
 
 
