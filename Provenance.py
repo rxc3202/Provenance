@@ -32,7 +32,7 @@ class ProvenanceServer(UDPServer):
 		else:
 			self.machines[addr] = self.RequestHandlerClass(request,
 												  client_address,
-												  (addr,port), "test")
+												  (addr,port))
 
 		return self.finish_request(request, client_address)
 
