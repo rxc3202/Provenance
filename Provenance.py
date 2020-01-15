@@ -75,8 +75,8 @@ def main():
 	with ProvenanceServer(socket, IndividualClientHandler) as server:
 		try:
 			print(f"Starting Server on {socket[0]}:{socket[1]}...")
-			# server.serve_forever()
-		except KeyboardException:
+			server.serve_forever()
+		except KeyboardInterrupt:
 			sys.exit(0)
 		finally:
 			server.shutdown()

