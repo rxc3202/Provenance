@@ -28,17 +28,20 @@ class IndividualClientHandler(BaseRequestHandler):
     """ Subclass Functions"""
     def handle(self):
         data = self.get_data()
-        request = dnslib.DNSRecord.parse(data)
         print(threading.current_thread().name)
-        # Check IDs for repeat numbers, ignore if processed
-        if not self.latest_request_id == request.header.id:
-            if request.header.get_opcode() == 0:
-                self.latest_request_id = request.header.id
-                latest_request_confirmed = False
-                self.send_cmd(request)
+        try:
+            request = dnslib.DNSRecord.parse(data)
+		    # Check IDs for repeat numbers, ignore if processed
+            if not self.latest_request_id == request.header.id:
+                if request.header.get_opcode() == 0:
+                    self.latest_request_id = request.header.id
+                    latest_request_confirmed = False
+                    self.send_cmd(request)
             elif request.header.get_opcode() == 5:
                 print("ack sent")
                 send_ack(request)
+        except dnslib.DNSError:
+            print("[INFO] Incorrectly formatted DNS Query. Skipping")
 
     def get_data(self):
         return self.request[0].strip()

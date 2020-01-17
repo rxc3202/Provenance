@@ -51,8 +51,6 @@ class ThreadedProvenanceServer(ThreadingMixIn, UDPServer):
 		return super().verify_request(request, client_address)
 
 	def process_request(self, request, client_address):
-		# TODO: spawn a new thread to handle this request and delegate 
-		# to the correct machine
 		addr, port = client_address
 		if addr in self.machines.keys():
 			self.machines[addr].request = request

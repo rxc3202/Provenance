@@ -28,6 +28,7 @@ def main():
 			server_thread.daemon = True
 			server_thread.start()
 			print("Server is running on", server_thread.name)
+
 		else:
 			server = ProvenanceServer(socket, IndividualClientHandler, args)
 			server.serve_forever()
