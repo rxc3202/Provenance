@@ -5,46 +5,9 @@ Description:	The main running file for the Provenance C2
 """
 
 import argparse
-import dnslib
-import threading
-import utils
 import sys
-from socketserver import UDPServer, BaseRequestHandler
-from machine import IndividualClientHandler
-
-
-class ProvenanceServer(UDPServer):
-	
-	def __init__(self, server_address, RequestHandlerClass, bind_and_activate=True):
-		super().__init__(server_address, RequestHandlerClass, bind_and_activate)
-		self.machines = {}
-		self.whitelist = utils.parse_whitelist(args.whitelist)
-		print(self.whitelist)
-		self.blacklist = []
-
-
-	def get_request(self):
-		return super().get_request()
-
-	def verify_request(self, request, client_address):
-		return super().verify_request(request, client_address)
-
-	def process_request(self, request, client_address):
-		# TODO: spawn a new thread to handle this request and delegate 
-		# to the correct machine
-		addr, port = client_address
-		if addr in self.machines.keys():
-			self.machines[addr].request = request
-		else:
-			self.machines[addr] = self.RequestHandlerClass(request,
-												  client_address,
-												  (addr,port))
-
-		return self.finish_request(request, client_address)
-
-	def finish_request(self, request, client_address):
-		addr, port = client_address
-		return self.machines[addr].handle()
+from ProvenanceServer import ProvenanceServer
+from handler import IndividualClientHandler
 
 
 def parse_arguments():
@@ -72,9 +35,9 @@ def main():
 	args = parse_arguments()
 	# print(f"namespace: {args}")
 	socket = (args.interface, args.port)	
-	with ProvenanceServer(socket, IndividualClientHandler) as server:
+	with ProvenanceServer(socket, IndividualClientHandler, args) as server:
 		try:
-			print(f"Starting Server on {socket[0]}:{socket[1]}...")
+			print(f"Starting Server on {socket[0]}:{socket[1]}.")
 			server.serve_forever()
 		except KeyboardInterrupt:
 			sys.exit(0)
