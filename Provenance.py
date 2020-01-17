@@ -70,7 +70,7 @@ def parse_arguments():
 def main():
 	global args
 	args = parse_arguments()
-	print(f"namespace: {args}")
+	# print(f"namespace: {args}")
 	socket = (args.interface, args.port)	
 	with ProvenanceServer(socket, IndividualClientHandler) as server:
 		try:
