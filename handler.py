@@ -1,5 +1,6 @@
 import dnslib
 from socketserver import BaseRequestHandler
+import threading
 
 
 class IndividualClientHandler(BaseRequestHandler):
@@ -37,13 +38,15 @@ class IndividualClientHandler(BaseRequestHandler):
     """ Subclass Functions"""
     def handle(self):
         data = self.get_data()
+        thread = threading.current_thread()
+        print(f"being handled by {thread.getName()}")
         try:
             request = dnslib.DNSRecord.parse(data)
             if request.header.id != self.latest_request_id:
                 if request.header.get_opcode() == 0:
+                    self.latest_request_id = request.header.id
                     self.latest_request_confirmed = False
                     self.send_cmd(request)
-                    self.latest_request_id = request.header.id
         except dnslib.DNSError:
             print("[INFO] Incorrectly formatted DNS Query. Skipping")
 

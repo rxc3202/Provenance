@@ -9,6 +9,7 @@ from ProvenanceServer import ProvenanceServer, ThreadedProvenanceServer
 import sys
 import threading
 import utils
+import time
 
 
 def main():
@@ -28,6 +29,8 @@ def main():
 			server_thread.daemon = True
 			server_thread.start()
 			print("Server is running on", server_thread.name)
+			time.sleep(1000) # just for testing
+
 
 		else:
 			server = ProvenanceServer(socket, IndividualClientHandler, args)
