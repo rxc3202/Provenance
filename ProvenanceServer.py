@@ -1,8 +1,5 @@
-import dnslib
-import threading
 import utils
-from socketserver import UDPServer, BaseRequestHandler, ThreadingMixIn
-from handler import IndividualClientHandler
+from socketserver import UDPServer, ThreadingMixIn
 
 
 class ProvenanceServer(UDPServer):
