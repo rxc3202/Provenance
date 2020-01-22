@@ -13,7 +13,6 @@ class ProvenanceServer(UDPServer):
 		self.whitelist = utils.parse_whitelist(args.whitelist)
 		self.blacklist = []
 
-
 	def get_request(self):
 		return super().get_request()
 
@@ -21,21 +20,19 @@ class ProvenanceServer(UDPServer):
 		return super().verify_request(request, client_address)
 
 	def process_request(self, request, client_address):
-		# TODO: spawn a new thread to handle this request and delegate 
-		# to the correct machine
 		addr, port = client_address
+		print(f"Received from {addr}:{port}")
 		if addr in self.machines.keys():
 			self.machines[addr].request = request
+			self.machines[addr].client_address = client_address
 		else:
-			self.machines[addr] = self.RequestHandlerClass(request,
-												  client_address,
-												  (addr,port))
-
+			self.machines[addr] = self.RequestHandlerClass(request, client_address, (addr, port))
 		return self.finish_request(request, client_address)
 
 	def finish_request(self, request, client_address):
 		addr, port = client_address
 		return self.machines[addr].handle()
+
 
 class ThreadedProvenanceServer(ThreadingMixIn, UDPServer):
 	def __init__(self, server_address, RequestHandlerClass, args, bind_and_activate=True):
@@ -55,9 +52,7 @@ class ThreadedProvenanceServer(ThreadingMixIn, UDPServer):
 		if addr in self.machines.keys():
 			self.machines[addr].request = request
 		else:
-			self.machines[addr] = self.RequestHandlerClass(request,
-												  client_address,
-												  (addr,port))
+			self.machines[addr] = self.RequestHandlerClass(request, client_address, (addr,port))
 		return self.finish_request(request, client_address)
 
 	def finish_request(self, request, client_address):
