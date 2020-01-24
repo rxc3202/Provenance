@@ -1,6 +1,5 @@
 import dnslib
 from socketserver import BaseRequestHandler
-import threading
 
 
 class IndividualClientHandler(BaseRequestHandler):
@@ -38,8 +37,6 @@ class IndividualClientHandler(BaseRequestHandler):
     """ Subclass Functions"""
     def handle(self):
         data = self.get_data()
-        thread = threading.current_thread()
-        print(f"being handled by {thread.getName()}")
         try:
             request = dnslib.DNSRecord.parse(data)
             if request.header.id != self.latest_request_id:
@@ -82,6 +79,6 @@ class IndividualClientHandler(BaseRequestHandler):
                 ttl=1337))
         # send command
         socket = self.request[1]
-        print(f"[INFO] Sending {self.command_type[opcode]} to {self.client_address}")
+        print(f"[INFO] Sending '{cmd}' to {self.client_address[0]}")
         socket.sendto(command_packet.pack(), self.client_address)
         self.sent_commands.append((request.header.id, cmd))

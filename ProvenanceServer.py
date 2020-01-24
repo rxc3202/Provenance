@@ -20,7 +20,6 @@ class ProvenanceServer(UDPServer):
 
 	def process_request(self, request, client_address):
 		addr, port = client_address
-		print(f"Received from {addr}:{port}")
 		if addr in self.machines.keys():
 			self.machines[addr].request = request
 			self.machines[addr].client_address = client_address
