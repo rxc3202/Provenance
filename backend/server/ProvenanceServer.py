@@ -1,7 +1,5 @@
-import utils
 from socketserver import UDPServer
 import threading
-
 
 
 class ProvenanceServer(UDPServer):
@@ -9,7 +7,7 @@ class ProvenanceServer(UDPServer):
 	def __init__(self, server_address, handler, args, bind_and_activate=True):
 		super().__init__(server_address, handler, bind_and_activate)
 		self.machines = {}
-		self.whitelist = utils.parse_whitelist(args.whitelist)
+		self.whitelist = []
 		self.blacklist = []
 
 	def get_request(self):
@@ -47,7 +45,7 @@ class ThreadedProvenanceServer(ProvenanceServer):
 	def __init__(self, server_address, handler, args, bind_and_activate=True):
 		super().__init__(server_address, handler, args, bind_and_activate)
 		self.machines = {}
-		self.whitelist = utils.parse_whitelist(args.whitelist) if args.whitelist else []
+		self.whitelist = []
 		self.blacklist = []
 
 	def process_request(self, request, client_address):

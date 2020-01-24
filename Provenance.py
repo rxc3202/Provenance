@@ -4,17 +4,17 @@ Author:			Ryan Cervantes
 Description:	The main running file for the Provenance C2 
 """
 
-from handler import IndividualClientHandler
-from ProvenanceServer import ProvenanceServer, ThreadedProvenanceServer
+from backend.server.handler import IndividualClientHandler
+from backend.server.ProvenanceServer import ProvenanceServer, ThreadedProvenanceServer
 import sys
 import threading
-import utils
 import time
+import backend.util.arguments as parser
 
 
 def main():
 	global args
-	args = utils.parse_arguments()
+	args = parser.parse_arguments()
 	# print(f"namespace: {args}")
 	socket = (args.interface, args.port)	
 
