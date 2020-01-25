@@ -1,10 +1,12 @@
 import dnslib
+import logging
 from . import ProtocolHandler
 
 
 @ProtocolHandler.register # Abstract Base Class registration
-class DNSHandler():
+class DNSHandler(ProtocolHandler):
     """ This represents a machine being controlled by Provenance"""
+
     RR = {
         "TXT": (dnslib.QTYPE.TXT, dnslib.TXT)
     }
@@ -18,6 +20,8 @@ class DNSHandler():
 
     """ Builtin Functions"""
     def __init__(self, ip, port, socket, rrtype="TXT", name=None):
+        self.logger = logging.getLogger("Provenance")
+
         self.ip = ip
         self.port = port
         self.socket = socket
@@ -45,7 +49,7 @@ class DNSHandler():
                     self.latest_request_id = request.header.id
                     self.send_command(request)
         except dnslib.DNSError:
-            print("[INFO] Incorrectly formatted DNS Query. Skipping")
+            self.logger.info("Incorrectly formatted DNS Query. Skipping")
     
 
     def send_command(self, request):
@@ -67,7 +71,7 @@ class DNSHandler():
                 rdata=rr_constructor(f"<{self.command_type[opcode]}>:{cmd}"),
                 ttl=1337))
         # send command
-        print(f"[INFO] Sending '{cmd}' to {(self.ip, self.port)}")
+        self.logger.info(f"Sending '{cmd}' to {(self.ip, self.port)}")
         self.socket.sendto(command_packet.pack(), (self.ip, self.port))
         self.sent_commands.append((request.header.id, cmd))
 

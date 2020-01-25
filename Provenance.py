@@ -4,13 +4,16 @@ Author:			Ryan Cervantes
 Description:	The main running file for the Provenance C2 
 """
 
-from backend.server.requesthandler import IndividualClientHandler
-from backend.server.ProvenanceServer import ProvenanceServer, ThreadedProvenanceServer
 import sys
 import threading
 import time
+import logging
+from backend.server.requesthandler import IndividualClientHandler
+from backend.server.ProvenanceServer import ProvenanceServer, ThreadedProvenanceServer
 import backend.util.arguments as parser
 
+logger = logging.getLogger("Provenance")
+logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 
 def main():
 	global args
@@ -18,7 +21,7 @@ def main():
 	# print(f"namespace: {args}")
 	socket = (args.interface, args.port)
 	try:
-		print(f"[INFO] Server starting on {socket[0]}:{socket[1]}.")
+		logger.info(f"Server starting on {socket[0]}:{socket[1]}.")
 		if args.threaded:
 			server = ThreadedProvenanceServer(socket, IndividualClientHandler, args)
 			# Start a thread with the server -- that thread will then start one
@@ -27,13 +30,12 @@ def main():
 			# Exit the server thread when the main thread terminates
 			server_thread.daemon = True
 			server_thread.start()
-			print("Server is running on", server_thread.name)
 			time.sleep(1000) # just for testing
 		else:
 			server = ProvenanceServer(socket, IndividualClientHandler, args)
 			server.serve_forever()
 	except KeyboardInterrupt:
-		print("[INFO] Exiting.")
+		logger.info(f"Exiting.")
 		sys.exit(0)
 
 
