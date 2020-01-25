@@ -22,11 +22,12 @@ class ProvenanceServer(UDPServer):
 			self.machines[addr].request = request
 			self.machines[addr].client_address = client_address
 		else:
-			self.machines[addr] = self.RequestHandlerClass(request, client_address, (addr, port))
+			self.machines[addr] = self.RequestHandlerClass(
+				request, client_address, (addr, port))
 		return self.finish_request(request, client_address)
 
 	def finish_request(self, request, client_address):
-		addr, port = client_address
+		addr = client_address[0]
 		return self.machines[addr].handle()
 
 
@@ -56,11 +57,12 @@ class ThreadedProvenanceServer(ProvenanceServer):
 			self.machines[addr].request = request
 			self.machines[addr].client_address = client_address
 		else:
-			self.machines[addr] = \
-				self.RequestHandlerClass(request, client_address, (addr, port))
+			self.machines[addr] = self.RequestHandlerClass(
+				request, client_address, (addr, port))
 
-		thread = threading.Thread(target=self.finish_request,
-								  args=(request, client_address))
+		thread = threading.Thread(
+			target=self.finish_request,
+			args=(request, client_address))
 		thread.daemon = self.daemon_threads
 
 		# Shamelessly taken from socketserver.py
@@ -71,7 +73,7 @@ class ThreadedProvenanceServer(ProvenanceServer):
 		thread.start()
 
 	def finish_request(self, request, client_address):
-		addr, port = client_address
+		addr = client_address[0]
 		return self.machines[addr].handle()
 
 	def server_close(self):

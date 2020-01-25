@@ -16,7 +16,9 @@ class IndividualClientHandler(BaseRequestHandler):
         )
 
 
-    """ BaseRequestHandler function """
     def handle(self):
         self.protocol_handler.handle_request(self.request)
-        
+
+
+    def queue_command(self, ctype, cmd):
+        self.protocol_handler.queue_cmd(ctype, cmd)
