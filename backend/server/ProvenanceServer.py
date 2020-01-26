@@ -3,6 +3,12 @@ import threading
 
 
 class ProvenanceServer(UDPServer):
+	"""
+	An implementation :module: socketserver.UDPServer used
+	to interact with various beacons. The methods defined
+	in this class follow the specification on
+	https://docs.python.org/3.7/library/socketserver.html
+	"""
 	
 	def __init__(self, server_address, handler, args, bind_and_activate=True):
 		super().__init__(server_address, handler, bind_and_activate)
@@ -19,8 +25,8 @@ class ProvenanceServer(UDPServer):
 	def process_request(self, request, client_address):
 		addr, port = client_address
 		if addr in self.machines.keys():
-			self.machines[addr].request = request
-			self.machines[addr].client_address = client_address
+			# Need to give handler the new request / new port
+			self.machines[addr].update_handler(request, client_address)
 		else:
 			self.machines[addr] = self.RequestHandlerClass(
 				request, client_address, (addr, port))
@@ -54,8 +60,7 @@ class ThreadedProvenanceServer(ProvenanceServer):
 		# Otherwise update the info needed to send packets
 		addr, port = client_address
 		if addr in self.machines.keys():
-			self.machines[addr].request = request
-			self.machines[addr].client_address = client_address
+			self.machines[addr].update_handler(request, client_address)
 		else:
 			self.machines[addr] = self.RequestHandlerClass(
 				request, client_address, (addr, port))

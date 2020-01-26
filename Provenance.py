@@ -15,6 +15,7 @@ import backend.util.arguments as parser
 logger = logging.getLogger("Provenance")
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 
+
 def main():
 	global args
 	args = parser.parse_arguments()

