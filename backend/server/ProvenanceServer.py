@@ -15,6 +15,7 @@ class ProvenanceServer(UDPServer):
 	def __init__(self, server_address, handler, args, bind_and_activate=True):
 		super().__init__(server_address, handler, bind_and_activate)
 		self.logger = logging.getLogger("Provenance")
+		self.args = args
 		self.machines = {}
 		self.whitelist = [] or parse_ips(args.whitelist)
 		self.blacklist = [] or parse_ips(args.blacklist)
@@ -24,17 +25,19 @@ class ProvenanceServer(UDPServer):
 
 	def verify_request(self, request, client_address):
 		addr, _ = client_address
-		if self.whitelist:
+
+		# If we're not doing discovery, only whitelisted IPs are valid
+		if not self.args.discovery:
 			if ip_in_list(addr, self.whitelist):
+				return super().verify_request(request, client_address)
+			else:
 				self.logger.info(f"{addr} not in whitelist.")
 				return
-			else:
-				if ip_in_list(addr, self.blacklist):
-					return
-		else:
-			if self.blacklist:
-				if addr in self.blacklist:
-					return
+		# Otherwise, we check if its in the whitelist
+		# but blacklist takes precedence
+		if ip_in_list(addr, self.whitelist):
+			if ip_in_list(addr, self.blacklist):
+				return
 		return super().verify_request(request, client_address)
 
 	def process_request(self, request, client_address):

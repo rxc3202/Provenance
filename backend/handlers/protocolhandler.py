@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 
+
 class Commands(Enum):
     """ The types of commands that can be on the victim
 
