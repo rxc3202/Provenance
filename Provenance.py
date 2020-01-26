@@ -10,19 +10,19 @@ import time
 import logging
 from backend.server.requesthandler import IndividualClientHandler
 from backend.server.ProvenanceServer import ProvenanceServer, ThreadedProvenanceServer
-import backend.util.arguments as parser
+import backend.util.arguments as argopts
 
 logger = logging.getLogger("Provenance")
-logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
+logging.basicConfig(level=logging.WARNING, format="[%(levelname)s] %(message)s")
 
 
 def main():
 	global args
-	args = parser.parse_arguments()
-	# print(f"namespace: {args}")
+	args = argopts.parse_arguments()
+	logger.setLevel(argopts.verbosity(args.verbose))
 	socket = (args.interface, args.port)
 	try:
-		logger.info(f"Server starting on {socket[0]}:{socket[1]}.")
+		logger.critical(f"Server starting on {socket[0]}:{socket[1]}.")
 		if args.threaded:
 			server = ThreadedProvenanceServer(socket, IndividualClientHandler, args)
 			# Start a thread with the server -- that thread will then start one
@@ -36,7 +36,7 @@ def main():
 			server = ProvenanceServer(socket, IndividualClientHandler, args)
 			server.serve_forever()
 	except KeyboardInterrupt:
-		logger.info(f"Exiting.")
+		logger.critical(f"Exiting.")
 		sys.exit(0)
 
 

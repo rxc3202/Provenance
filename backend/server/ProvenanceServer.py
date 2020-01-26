@@ -1,5 +1,7 @@
-from socketserver import UDPServer
+import logging
 import threading
+from socketserver import UDPServer
+from backend.util.arguments import parse_ips, ip_in_list
 
 
 class ProvenanceServer(UDPServer):
@@ -12,18 +14,32 @@ class ProvenanceServer(UDPServer):
 	
 	def __init__(self, server_address, handler, args, bind_and_activate=True):
 		super().__init__(server_address, handler, bind_and_activate)
+		self.logger = logging.getLogger("Provenance")
 		self.machines = {}
-		self.whitelist = []
-		self.blacklist = []
+		self.whitelist = [] or parse_ips(args.whitelist)
+		self.blacklist = [] or parse_ips(args.blacklist)
 
 	def get_request(self):
 		return super().get_request()
 
 	def verify_request(self, request, client_address):
+		addr, _ = client_address
+		if self.whitelist:
+			if ip_in_list(addr, self.whitelist):
+				self.logger.info(f"{addr} not in whitelist.")
+				return
+			else:
+				if ip_in_list(addr, self.blacklist):
+					return
+		else:
+			if self.blacklist:
+				if addr in self.blacklist:
+					return
 		return super().verify_request(request, client_address)
 
 	def process_request(self, request, client_address):
 		addr, port = client_address
+
 		if addr in self.machines.keys():
 			# Need to give handler the new request / new port
 			self.machines[addr].update_handler(request, client_address)
