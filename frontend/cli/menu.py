@@ -1,7 +1,6 @@
 from enum import Enum
 import os
 import sys
-from abc import ABC, abstractmethod
 
 
 class FGColors(Enum):
@@ -25,17 +24,6 @@ class BGColors(Enum):
     PINK = '\033[105m'
     CYAN = '\033[106m'
     WHITE = '\033[107m'
-
-title = """
-Welcome to the ...
- ______                                                           
-(_____ \                                                          
- _____) )____  ___  _   _  ____  ____    ____  ____    ____  ____ 
-|  ____// ___)/ _ \| | | |/ _  )|  _ \  / _  ||  _ \  / ___)/ _  )
-| |    | |   | |_| |\ V /( (/ / | | | |( ( | || | | |( (___( (/ / 
-|_|    |_|    \___/  \_/  \____)|_| |_| \_||_||_| |_| \____)\____)
-                                Command and Control Platform
-"""
 
 
 class Menu(object):
@@ -64,6 +52,9 @@ class Menu(object):
     def print_banner(self):
         Menu.print(self.banner, FGColors.PINK)
 
+    def add_action(self, name, func):
+        self.actions.append((name, func))
+
     def display_actions(self):
         """
         Displays the options in this menu
@@ -88,12 +79,4 @@ class Menu(object):
             self.act()
         except KeyboardInterrupt:
             sys.exit(0)
-
-
-if __name__ == '__main__':
-    main = Menu("Main", title)
-    main.print_banner()
-    main.display_actions()
-    main.act()
-
 
