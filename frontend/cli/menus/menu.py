@@ -1,43 +1,38 @@
 from abc import ABC, abstractmethod
 from colorama import Fore, init
-from enum import Enum
 import os
 import sys
 
 
 class Menu(ABC):
 
-    current_menu = None
-    os = sys.platform
+    context_driver = None
+    action_delimiter = "menu_"
+    prompt = ">> "
 
-    def __init__(self, name, banner, parent, actions):
+    def __init__(self, name, header, parent, actions, root=False):
         self.name = name
-        self.banner = banner
+        self.header = header
         self.parent = parent
-        self.actions = actions
-        init() # init colorma
+        self.actions = []
+        init() # init coloarma
 
-
-    @classmethod
-    def print(cls, string, color, end="\n"):
+    def print(self, string, color, end="\n"):
         print(f"{color}{string}{Fore.RESET}", end=end)
 
-    def up(self):
-        self.current_menu = self.parent
-        self.current_menu.display_actions()
-        self.current_menu.act()
+    def print_header(self):
+        self.print(f"{self.name}\n{'=' * len(self.name)}", Fore.WHITE)
 
-    def print_banner(self):
-        Menu.print(self.banner, Fore.WHITE)
+    def switch_menu(self, menu):
+        self.context_driver.switch_menu(menu)
 
     def display_actions(self):
         """
         Displays the options in this menu
         :return: None
         """
-        Menu.print("Available Actions:", Fore.WHITE)
         for i, item in enumerate(self.actions):
-            Menu.print(f"[{i}] {item[0]}", Fore.WHITE)
+            self.print(f"[{i}] {item[0]}", Fore.WHITE)
 
     def act(self):
         """
@@ -45,14 +40,20 @@ class Menu(ABC):
         :return: None
         """
         try:
-            choice = int(input(">> "))
-            self.actions[choice][1](self)
+            choice = int(input(self.prompt))
+            func = self.actions[choice][1]()
         except (ValueError, IndexError):
-            os.system("cls||clear")
-            self.print_banner()
-            self.display_actions()
-            self.act()
+            pass
         except (KeyboardInterrupt, EOFError):
             os.system("cls||clear")
             sys.exit(0)
+
+    def generate(self):
+        funcs = []
+        for name in dir(self.__class__):
+            if name.startswith(self.action_delimiter):
+                funcs.append(name)
+
+        actions = [(f[len(self.action_delimiter):].replace("_", " "), getattr(self, f)) for f in funcs]
+        self.actions = actions
 
