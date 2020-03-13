@@ -17,8 +17,13 @@ class ProvenanceServer(UDPServer):
 		self.logger = logging.getLogger("Provenance")
 		self.args = args
 		self.machines = {}
-		self.whitelist = [] or parse_ips(args.whitelist)
-		self.blacklist = [] or parse_ips(args.blacklist)
+		self.whitelist = []
+		self.blacklist = []
+		if args.whitelist:
+			self.whitelist = parse_ips(args.whitelist)
+		if args.blacklist:
+			self.blacklist = parse_ips(args.blacklist)
+
 
 	def get_request(self):
 		return super().get_request()

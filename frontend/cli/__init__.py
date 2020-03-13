@@ -1,1 +1,1 @@
-import frontend.menu
+from frontend.cli.menus.welcome import WelcomeMenu

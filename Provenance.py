@@ -8,6 +8,7 @@ import sys
 import threading
 import time
 import logging
+from frontend.cli.clidriver import CLIDriver
 from backend.server.requesthandler import IndividualClientHandler
 from backend.server.ProvenanceServer import ProvenanceServer, ThreadedProvenanceServer
 import backend.util.arguments as argopts
@@ -21,6 +22,12 @@ def main():
 	args = argopts.parse_arguments()
 	logger.setLevel(argopts.verbosity(args.verbose))
 	socket = (args.interface, args.port)
+
+	if args.ui == "cli":
+		cli = CLIDriver.generate()
+		frontend_thread = threading.Thread(target=cli.run)
+		frontend_thread.start()
+
 	try:
 		logger.critical(f"Server starting on {socket[0]}:{socket[1]}.")
 		if args.threaded:
@@ -31,12 +38,10 @@ def main():
 			# Exit the server thread when the main thread terminates
 			server_thread.daemon = True
 			server_thread.start()
-			time.sleep(1000) # just for testing
 		else:
 			server = ProvenanceServer(socket, IndividualClientHandler, args)
 			server.serve_forever()
 	except KeyboardInterrupt:
-		logger.critical(f"Exiting.")
 		sys.exit(0)
 
 

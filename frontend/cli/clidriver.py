@@ -1,22 +1,23 @@
-from frontend.cli.menu import Menu
+from frontend.cli.menus.welcome import WelcomeMenu
 
 
-banner = """
-Welcome to the ...
- ______                                                           
-(_____ \                                                          
- _____) )____  ___  _   _  ____  ____    ____  ____    ____  ____ 
-|  ____// ___)/ _ \| | | |/ _  )|  _ \  / _  ||  _ \  / ___)/ _  )
-| |    | |   | |_| |\ V /( (/ / | | | |( ( | || | | |( (___( (/ / 
-|_|    |_|    \___/  \_/  \____)|_| |_| \_||_||_| |_| \____)\____)
-                                Command and Control Platform
-"""
+class CLIDriver(object):
 
+    def __init__(self, init_menu):
+        self.current_menu = init_menu
 
-class MainMenu(Menu):
+    def switch_menu(self, menu):
+        self.current_menu = menu
 
-    def __init__(self, controller):
-        super().__init__("Main Menu", banner)
-        self.controller = controller
+    def run(self):
+        while True:
+            self.current_menu.print_banner()
+            self.current_menu.display_actions()
+            self.current_menu.act()
+
+    @staticmethod
+    def generate():
+        main_menu = WelcomeMenu.generate()
+        return CLIDriver(main_menu)
 
 
