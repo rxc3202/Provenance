@@ -44,3 +44,15 @@ class ProtocolHandler(ABC):
         :return: None
         """
         raise NotImplementedError("queue_command() not implemented in subclass.")
+
+    @abstractmethod
+    def send_command(self, request, port):
+        """
+        A required method that lets the server interface with the model to
+        send a command
+        :param request: the request received from :module: BaseRequestHandler
+        :param port: the port that the client is receiving
+        :return: None
+        """
+        raise NotImplementedError("send_command() not implemented in subclass.")
+

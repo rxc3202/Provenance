@@ -12,6 +12,7 @@ from frontend.cli.clidriver import CLIDriver
 from backend.server.requesthandler import IndividualClientHandler
 from backend.server.ProvenanceServer import ProvenanceServer, ThreadedProvenanceServer
 import backend.util.arguments as argopts
+from controllers.modelcontroller import Controller
 
 logger = logging.getLogger("Provenance")
 logging.basicConfig(level=logging.WARNING, format="[%(levelname)s] %(message)s")
@@ -23,11 +24,7 @@ def main():
 	logger.setLevel(argopts.verbosity(args.verbose))
 	socket = (args.interface, args.port)
 
-	if args.ui == "cli":
-		cli = CLIDriver.generate()
-		frontend_thread = threading.Thread(target=cli.run)
-		frontend_thread.start()
-
+	# Initialize Backend
 	try:
 		logger.critical(f"Server starting on {socket[0]}:{socket[1]}.")
 		if args.threaded:
@@ -43,6 +40,16 @@ def main():
 			server.serve_forever()
 	except KeyboardInterrupt:
 		sys.exit(0)
+
+	# Initialize Controller
+	controller = Controller(server)
+
+	# Initialize Frontend
+	if args.ui == "cli":
+		cli = CLIDriver.generate(controller)
+		frontend_thread = threading.Thread(target=cli.run)
+		frontend_thread.start()
+
 
 
 if __name__ == '__main__':

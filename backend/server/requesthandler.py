@@ -10,6 +10,9 @@ class IndividualClientHandler(BaseRequestHandler):
         self.client_address = client_address
         self.server = server
 
+        # self.queued_commands = [(Commands.POWERSHELL, "whoami"), (Commands.POWERSHELL, "ls")]
+        # self.sent_commands = []
+
         # The model that tracks each controlled machine
         self.protocol_handler = handler or handlers.dns.DNSHandler(
             client_address[0], request[1]
@@ -49,3 +52,10 @@ class IndividualClientHandler(BaseRequestHandler):
         :return: None
         """
         self.protocol_handler.queue_cmd(ctype, cmd)
+
+    def get_queued_commands(self):
+        return self.protocol_handler.queued_commands
+
+    def get_sent_commands(self):
+        return self.protocol_handler.sent_commands
+

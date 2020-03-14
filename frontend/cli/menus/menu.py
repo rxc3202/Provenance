@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 from colorama import Fore, init
 import os
 import sys
@@ -10,12 +10,17 @@ class Menu(ABC):
     action_delimiter = "menu_"
     prompt = ">> "
 
-    def __init__(self, name, header, parent, actions, root=False):
+    def __init__(self, name, header, parent):
         self.name = name
         self.header = header
         self.parent = parent
-        self.actions = []
-        init() # init coloarma
+        funcs = []
+        for name in dir(self.__class__):
+            if name.startswith(self.action_delimiter):
+                funcs.append(name)
+        actions = [(f[len(self.action_delimiter):].replace("_", " "), getattr(self, f)) for f in funcs]
+        self.actions = actions
+        init()  # init colorarma
 
     def print(self, string, color, end="\n"):
         print(f"{color}{string}{Fore.RESET}", end=end)
@@ -34,26 +39,17 @@ class Menu(ABC):
         for i, item in enumerate(self.actions):
             self.print(f"[{i}] {item[0]}", Fore.WHITE)
 
-    def act(self):
+    def act(self, **kwargs):
         """
         The method that runs the main function of this menu
         :return: None
         """
         try:
             choice = int(input(self.prompt))
-            func = self.actions[choice][1]()
+            self.actions[choice][1](**kwargs)
         except (ValueError, IndexError):
             pass
         except (KeyboardInterrupt, EOFError):
             os.system("cls||clear")
             sys.exit(0)
-
-    def generate(self):
-        funcs = []
-        for name in dir(self.__class__):
-            if name.startswith(self.action_delimiter):
-                funcs.append(name)
-
-        actions = [(f[len(self.action_delimiter):].replace("_", " "), getattr(self, f)) for f in funcs]
-        self.actions = actions
 

@@ -4,7 +4,7 @@ import os
 
 class WelcomeMenu(Menu):
 
-    def menu_Exec_Shell(self):
+    def menu_Exec_Shell(self, **kwargs):
         print("Type 'exit' to exit")
         while True:
             cmd = input("$> ")
@@ -12,11 +12,11 @@ class WelcomeMenu(Menu):
                 break
             os.system(f"powershell -command \"{cmd}\"")
 
-    def menu_View_Options(self):
+    def menu_View_Options(self, **kwargs):
         pass
 
-    def menu_View_Logs(self):
+    def menu_View_Logs(self, **kwargs):
         pass
 
-    def menu_Machines(self):
+    def menu_Machines(self, **kwargs):
         self.switch_menu("machine")

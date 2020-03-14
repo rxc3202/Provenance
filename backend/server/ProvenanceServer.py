@@ -79,6 +79,7 @@ class ThreadedProvenanceServer(ProvenanceServer):
 		self.whitelist = []
 		self.blacklist = []
 
+	# Server Handling Methods
 	def process_request(self, request, client_address):
 		# Create a unique handler for that machine if doesn't exist
 		# Otherwise update the info needed to send packets
@@ -113,3 +114,14 @@ class ThreadedProvenanceServer(ProvenanceServer):
 			if _threads:
 				for t in _threads:
 					t.join()
+
+	# Querying interface methods
+	def get_hosts(self):
+		return self.machines.keys()
+
+	def get_machine(self, host):
+		return self.machines[host]
+
+	def get_queued_commands(self, host):
+		machine = self.machines[host]
+		return machine.get_queued_commands()
