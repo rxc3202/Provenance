@@ -9,7 +9,7 @@ import threading
 import time
 import logging
 from frontend.cli.clidriver import CLIDriver
-from backend.server.requesthandler import IndividualClientHandler
+from backend.server.ProvenanceClient import ProvenanceClientHandler
 from backend.server.ProvenanceServer import ProvenanceServer, ThreadedProvenanceServer
 import backend.util.arguments as argopts
 from controllers.modelcontroller import Controller
@@ -28,7 +28,7 @@ def main():
 	try:
 		logger.critical(f"Server starting on {socket[0]}:{socket[1]}.")
 		if args.threaded:
-			server = ThreadedProvenanceServer(socket, IndividualClientHandler, args)
+			server = ThreadedProvenanceServer(server_address=socket, handler=ProvenanceClientHandler, args=args)
 			# Start a thread with the server -- that thread will then start one
 			# more thread for each request
 			server_thread = threading.Thread(target=server.serve_forever)
@@ -36,7 +36,7 @@ def main():
 			server_thread.daemon = True
 			server_thread.start()
 		else:
-			server = ProvenanceServer(socket, IndividualClientHandler, args)
+			server = ProvenanceServer(socket, ProvenanceClientHandler, args)
 			server.serve_forever()
 	except KeyboardInterrupt:
 		sys.exit(0)
