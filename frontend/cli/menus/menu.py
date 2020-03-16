@@ -25,7 +25,7 @@ class Menu(ABC):
     def print(self, string, color, end="\n"):
         print(f"{color}{string}{Fore.RESET}", end=end)
 
-    def print_header(self):
+    def print_header(self, **kwargs):
         self.print(f"{self.name}\n{'=' * len(self.name)}", Fore.WHITE)
 
     def switch_menu(self, menu):

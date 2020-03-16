@@ -1,6 +1,7 @@
 from socketserver import BaseRequestHandler
 import backend.handlers as handlers
 from enum import Enum
+from datetime import datetime, timedelta
 
 
 class Commands(Enum):
@@ -30,15 +31,15 @@ class ProvenanceClientHandler(BaseRequestHandler):
 
         # Subclass Initialization
         self.hostname = hostname or f"Client_{self.client_count}"
-        self.queued_commands = [(Commands.PS, "whoami"), (Commands.PS, "ls")]
+        self.queued_commands = [(Commands.PS, "whoami", 1000), (Commands.PS, "ls", 1001)]
         self.sent_commands = []
-        self.commands_count = 0
+        self.command_count = 0
         # The model that tracks each controlled machine
         # TODO: somehow dynamically assess the protocol (maybe set up multiple ports)
         self.protocol_handler = handler or handlers.dns.DNSHandler(
             ip=client_address[0], socket=request[1]
         )
-
+        self.last_active = datetime.now()
         self.client_count += 1
 
     def __repr__(self):
@@ -58,6 +59,7 @@ class ProvenanceClientHandler(BaseRequestHandler):
         """
         self.client_address = client_address
         self.request = request
+        self.last_active = datetime.now()
 
     def handle(self):
         """
@@ -69,12 +71,12 @@ class ProvenanceClientHandler(BaseRequestHandler):
         """
         _, port = self.client_address
         if self.queued_commands:
-            cmd_to_be_sent = self.queued_commands.pop()
+            #TODO Make a command tuple
+            cmd_to_be_sent = self.queued_commands.pop()[:2]
         else:
             cmd_to_be_sent = (Commands.NOP, "NONE")
         self.protocol_handler.handle_request(self.request, port, cmd_to_be_sent)
-        self.sent_commands.append((self.commands_count, cmd_to_be_sent))
-        # self.sent_commands.append((request.header.id, cmd))
+        self.sent_commands.append((self.command_count, cmd_to_be_sent))
 
     def queue_command(self, ctype, cmd):
         """
@@ -85,12 +87,30 @@ class ProvenanceClientHandler(BaseRequestHandler):
         :param cmd: the command to be sent
         :return: None
         """
-        self.queued_commands.append((Commands[ctype], cmd))
-        # self.protocol_handler.queue_cmd(ctype, cmd)
+        convert = {"ps": Commands.PS, "bash":Commands.BASH, "cmd":Commands.CMD}
+        command_type = convert[ctype]
+        self.queued_commands.append((command_type, cmd, self.command_count))
+        self.command_count += 1
 
     def get_queued_commands(self):
         return self.queued_commands
 
     def get_sent_commands(self):
         return self.sent_commands
+
+    def get_last_active(self):
+        delta = datetime.now() - self.last_active
+        return f"{delta.seconds//60}m"
+
+    def get_command_count(self):
+        return self.command_count
+
+    def get_hostname(self):
+        return self.hostname
+
+    def get_ip(self):
+        return self.server[0]
+
+
+
 

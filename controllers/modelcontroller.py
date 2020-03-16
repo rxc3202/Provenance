@@ -4,13 +4,14 @@ class Controller(object):
         self.server = server
 
     # Interactive commands
-    def queue_command(self, ip, command):
+    def queue_command(self, ctype, ip, command):
         """
         Queue a single command on the given host
         :param ip: the IP of the host
         :param command: the powershell command to add
         :return: None
         """
+        self.server.queue_command(ctype, ip, command)
 
     def remove_command(self, ip, command):
         """
@@ -43,7 +44,22 @@ class Controller(object):
     def get_queued_commands(self, ip):
         return self.server.get_queued_commands(ip)
 
-    def get_machine(self, ip):
-        return self.server.get_machine(ip)
+    def get_hostname(self, ip):
+        info = self.server.get_host_info(ip)
+        return info[0]
+
+    def get_num_queued_commands(self, ip):
+        info = self.server.get_host_info(ip)
+        return info[3]
+
+    def get_last_active(self, ip):
+        info = self.server.get_host_info(ip)
+        return info[2]
+
+    def get_machine_info(self, ip):
+        return self.server.get_machine_info(ip)
+
+    def get_hosts(self):
+        return self.server.get_hosts()
 
 

@@ -30,13 +30,10 @@ class CLIDriver(object):
         os.system("cls||clear")
         print(self.banner)
 
-    def print_header(self):
-        self.current_menu.print_header()
-
     def run(self):
         while True:
             self.print_banner()
-            self.print_header()
+            self.current_menu.print_header(model=self.model)
             self.current_menu.display_actions()
             self.current_menu.act(model=self.model)
 

@@ -119,9 +119,14 @@ class ThreadedProvenanceServer(ProvenanceServer):
 	def get_hosts(self):
 		return self.machines.keys()
 
-	def get_machine(self, host):
-		return self.machines[host]
+	def get_machine_info(self, host):
+		host = self.machines[host]
+		return host.get_hostname(), host.get_ip(), host.get_last_active(), len(host.get_queued_commands())
 
 	def get_queued_commands(self, host):
 		machine = self.machines[host]
 		return machine.get_queued_commands()
+
+	def queue_command(self, ctype, ip, cmd):
+		machine = self.machines[ip]
+		machine.queue_command(ctype, cmd)
