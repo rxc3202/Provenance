@@ -11,22 +11,28 @@ class ProvenanceClientHandler(BaseRequestHandler):
     client_count = 0
 
     """ Builtin Functions"""
-    def __init__(self, request, client_address, server, hostname="", handler=None):
+    def __init__(self, request, ip, socket, serverinfo, hostname="", handler=None):
         # Superclass initialization
         self.request = request
-        self.client_address = client_address
-        self.server = server
+        self.client_address = None
+        self.server = serverinfo
 
         # Subclass Initialization
+        self.ip = ip
+        self.socket = socket
         self.hostname = hostname or f"Client_{self.client_count}"
         self.queued_commands = [Command(CommandType.PS, "whoami", 1000), Command(CommandType.PS, "ls", 1001)]
         self.sent_commands = []
         self.command_count = 0
         # The model that tracks each controlled machine
         # TODO: somehow dynamically assess the protocol (maybe set up multiple ports)
-        self.protocol_handler = handler or handlers.dns.DNSHandler(
-            ip=client_address[0], socket=request[1]
-        )
+        if request:
+            self.protocol_handler = handler or handlers.dns.DNSHandler(
+                #ip=client_address[0, socket=request[1]
+                ip=self.ip, socket=self.socket
+            )
+        else:
+            self.protocol_handler = None
         self.last_active = None
         self.client_count += 1
 
@@ -46,8 +52,13 @@ class ProvenanceClientHandler(BaseRequestHandler):
         :return: None
         """
         self.client_address = client_address
+        self.ip = client_address[0]
         self.request = request
-        self.last_active = datetime.now()
+        self.socket = request[1]
+        if not self.protocol_handler:
+            self.protocol_handler = handlers.dns.DNSHandler(
+                ip=self.ip, socket=self.socket
+            )
 
     def handle(self):
         """
@@ -58,8 +69,8 @@ class ProvenanceClientHandler(BaseRequestHandler):
         :return:  None
         """
         _, port = self.client_address
+        self.last_active = datetime.now()
         if self.queued_commands:
-            #TODO Make a command tuple
             cmd_to_be_sent = self.queued_commands.pop()[:2]
         else:
             cmd_to_be_sent = (CommandType.NOP, "NONE")
@@ -110,10 +121,14 @@ class ProvenanceClientHandler(BaseRequestHandler):
         return self.command_count
 
     def get_hostname(self):
+        if not self.hostname:
+            return "N/A"
         return self.hostname
 
     def get_ip(self):
-        return self.server[0]
+        if not self.ip:
+            return "N/A"
+        return self.ip
 
 
 

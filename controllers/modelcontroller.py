@@ -38,7 +38,7 @@ class Controller(object):
         :param ip:
         :return: None
         """
-        self.server.add_host(ip)
+        return self.server.add_host(ip)
 
     # Query Commands
     def get_queued_commands(self, ip):
@@ -46,15 +46,15 @@ class Controller(object):
 
     def get_hostname(self, ip):
         info = self.server.get_host_info(ip)
-        return info[0]
+        return info.hostname
 
     def get_num_queued_commands(self, ip):
         info = self.server.get_host_info(ip)
-        return info[3]
+        return info.cmd_count
 
     def get_last_active(self, ip):
         info = self.server.get_host_info(ip)
-        return info[2]
+        return info.active
 
     def get_machine_info(self, ip):
         return self.server.get_machine_info(ip)

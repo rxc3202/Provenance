@@ -2,6 +2,7 @@ import logging
 import threading
 from socketserver import UDPServer
 from backend.util.arguments import parse_ips, ip_in_list
+from frontend.util.structs import ClientInfo
 
 
 class ProvenanceServer(UDPServer):
@@ -52,7 +53,7 @@ class ProvenanceServer(UDPServer):
 			self.machines[addr].update_handler(request, client_address)
 		else:
 			self.machines[addr] = self.RequestHandlerClass(
-				request, client_address, (addr, port))
+				request=request, ip=client_address[0], socket=client_address[1], serverinfo=(addr, port))
 		return self.finish_request(request, client_address)
 
 	def finish_request(self, request, client_address):
@@ -87,7 +88,7 @@ class ThreadedProvenanceServer(ProvenanceServer):
 			self.machines[addr].update_handler(request, client_address)
 		else:
 			self.machines[addr] = self.RequestHandlerClass(
-				request, client_address, (addr, port))
+				request=request, ip=client_address[0], socket=client_address[1], serverinfo=(addr, port))
 
 		thread = threading.Thread(
 			target=self.finish_request,
@@ -120,7 +121,8 @@ class ThreadedProvenanceServer(ProvenanceServer):
 
 	def get_machine_info(self, host):
 		host = self.machines[host]
-		return host.get_hostname(), host.get_ip(), host.get_last_active(), len(host.get_queued_commands())
+		return ClientInfo(host.get_hostname(), host.get_ip(),
+						  host.get_last_active(), len(host.get_queued_commands()))
 
 	def get_queued_commands(self, host):
 		machine = self.machines[host]
@@ -135,4 +137,9 @@ class ThreadedProvenanceServer(ProvenanceServer):
 		machine.remove_command(cmd_id)
 
 	def add_host(self, ip):
-		new_handler = self.RequestHandlerClass(request=None, client_address=None, server=None)
+		new_handler = self.RequestHandlerClass(request=None, ip=ip, socket=None, serverinfo=self.server_address)
+		if ip not in self.machines.keys():
+			self.machines[ip] = new_handler
+			return True
+		return False
+

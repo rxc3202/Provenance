@@ -23,6 +23,13 @@ accessing them using indices
 """
 Command = namedtuple("Command", ["type", "command", "uid"])
 
+"""
+A simple structure allowing for a more intuitive semantic understanding
+of the information queried from server representation of the clients rather than
+accessing them using indices
+"""
+ClientInfo = namedtuple("ClientInfo", ["hostname", "ip", "active", "cmd_count"])
+
 
 
 

@@ -68,7 +68,16 @@ class MachineMenu(Menu):
         input("Press any key to continue...")
 
     def menu_Add_Host(self, **kwargs):
-        pass
+        print("[add-host] <ip>")
+        host = input("Enter IP to Track: ")
+        # TODO: do IP format checking
+        res = kwargs["model"].add_host(host)
+        if res:
+            print(f"Host \"{host}\" Added!")
+        else:
+            print(f"Error adding host")
+        time.sleep(.5)
+
 
     def menu_Remove_Host(self, **kwargs):
         pass
