@@ -38,7 +38,7 @@ class Controller(object):
         :param ip:
         :return: None
         """
-        pass
+        self.server.add_host(ip)
 
     # Query Commands
     def get_queued_commands(self, ip):

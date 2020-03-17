@@ -12,18 +12,17 @@ class ProvenanceServer(UDPServer):
 	https://docs.python.org/3.7/library/socketserver.html
 	"""
 	
-	def __init__(self, server_address, handler, args, bind_and_activate=True):
+	def __init__(self, server_address, handler, bind_and_activate=True, discovery=True, whitelist=None, blacklist=None):
 		super().__init__(server_address, handler, bind_and_activate)
 		self.logger = logging.getLogger("Provenance")
-		self.args = args
 		self.machines = {}
 		self.whitelist = []
 		self.blacklist = []
-		if args.whitelist:
-			self.whitelist = parse_ips(args.whitelist)
-		if args.blacklist:
-			self.blacklist = parse_ips(args.blacklist)
-
+		self.discovery = discovery
+		if whitelist:
+			self.whitelist = parse_ips(whitelist)
+		if blacklist:
+			self.blacklist = parse_ips(blacklist)
 
 	def get_request(self):
 		return super().get_request()
@@ -32,7 +31,7 @@ class ProvenanceServer(UDPServer):
 		addr, _ = client_address
 
 		# If we're not doing discovery, only whitelisted IPs are valid
-		if not self.args.discovery:
+		if not self.discovery:
 			if ip_in_list(addr, self.whitelist):
 				return super().verify_request(request, client_address)
 			else:
@@ -73,8 +72,8 @@ class ThreadedProvenanceServer(ProvenanceServer):
 	# used by server_close() to wait for all threads completion.
 	threads = []
 
-	def __init__(self, server_address, handler, args, bind_and_activate=True):
-		super().__init__(server_address, handler, args, bind_and_activate)
+	def __init__(self, server_address, handler, bind_and_activate=True, discovery=True, whitelist=None, blacklist=None):
+		super().__init__(server_address, handler, bind_and_activate, discovery, whitelist, blacklist)
 		self.machines = {}
 		self.whitelist = []
 		self.blacklist = []
@@ -134,3 +133,6 @@ class ThreadedProvenanceServer(ProvenanceServer):
 	def remove_command(self, ip, cmd_id):
 		machine = self.machines[ip]
 		machine.remove_command(cmd_id)
+
+	def add_host(self, ip):
+		new_handler = self.RequestHandlerClass(request=None, client_address=None, server=None)

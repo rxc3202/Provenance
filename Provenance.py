@@ -28,7 +28,7 @@ def main():
 	try:
 		logger.critical(f"Server starting on {socket[0]}:{socket[1]}.")
 		if args.threaded:
-			server = ThreadedProvenanceServer(server_address=socket, handler=ProvenanceClientHandler, args=args)
+			server = ThreadedProvenanceServer(server_address=socket, handler=ProvenanceClientHandler, discovery=args.discovery)
 			# Start a thread with the server -- that thread will then start one
 			# more thread for each request
 			server_thread = threading.Thread(target=server.serve_forever)

@@ -39,7 +39,7 @@ class ProvenanceClientHandler(BaseRequestHandler):
         self.protocol_handler = handler or handlers.dns.DNSHandler(
             ip=client_address[0], socket=request[1]
         )
-        self.last_active = datetime.now()
+        self.last_active = None
         self.client_count += 1
 
     def __repr__(self):
@@ -112,8 +112,11 @@ class ProvenanceClientHandler(BaseRequestHandler):
         return self.sent_commands
 
     def get_last_active(self):
-        delta = datetime.now() - self.last_active
-        return f"{delta.seconds//60}m"
+        if not self.last_active:
+            return "N/A"
+        else:
+            delta = datetime.now() - self.last_active
+            return f"{delta.seconds//60}m"
 
     def get_command_count(self):
         return self.command_count

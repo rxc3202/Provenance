@@ -8,10 +8,10 @@ class Menu(ABC):
 
     context_driver = None
     action_delimiter = "menu_"
-    prompt = ">> "
 
-    def __init__(self, name, header, parent):
+    def __init__(self, name, header, parent, prompt=">>"):
         self.name = name
+        self.prompt = prompt
         self.header = header
         self.parent = parent
         funcs = []

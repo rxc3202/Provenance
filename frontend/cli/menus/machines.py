@@ -66,3 +66,9 @@ class MachineMenu(Menu):
             table.add_row([i, cmd[2], cmd[1]])
         print(table)
         input("Press any key to continue...")
+
+    def menu_Add_Host(self, **kwargs):
+        pass
+
+    def menu_Remove_Host(self, **kwargs):
+        pass

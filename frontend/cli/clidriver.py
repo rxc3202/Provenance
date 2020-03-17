@@ -39,8 +39,8 @@ class CLIDriver(object):
 
     @staticmethod
     def generate(model):
-        main_menu = WelcomeMenu("Main Menu", None, None)
-        machine_menu = MachineMenu(name="Machines", header=None, parent="main")
+        main_menu = WelcomeMenu("Main Menu", header=None, parent=None, prompt="(main)> ")
+        machine_menu = MachineMenu(name="Machines", header=None, parent="main", prompt="(machines)> ")
         menus = {
             "main": main_menu,
             "machine": machine_menu
