@@ -92,6 +92,19 @@ class ProvenanceClientHandler(BaseRequestHandler):
         self.queued_commands.append((command_type, cmd, self.command_count))
         self.command_count += 1
 
+    def remove_command(self, cmd_id):
+        """
+        The server method used to interact with the underyling
+        model representing the victim machine. Will queue a
+        command to be sent next time the beacon calls back
+        :param ctype: type of command :module: protocolhandler.Commands
+        :param cmd: the command to be sent
+        :return: None
+        """
+        for i, cmd in enumerate(self.queued_commands):
+            if cmd[2] == cmd_id:
+                self.queued_commands.pop(i)
+
     def get_queued_commands(self):
         return self.queued_commands
 

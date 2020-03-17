@@ -13,14 +13,14 @@ class Controller(object):
         """
         self.server.queue_command(ctype, ip, command)
 
-    def remove_command(self, ip, command):
+    def remove_command(self, ip, cmd_id):
         """
         Remove a single command on the given host
         :param ip: the IP of the host
         :param command: the powershell command to remove
         :return: None
         """
-        pass
+        self.server.remove_command(ip, cmd_id)
 
     def remove_host(self, ip):
         """

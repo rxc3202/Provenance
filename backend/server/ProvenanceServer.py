@@ -130,3 +130,7 @@ class ThreadedProvenanceServer(ProvenanceServer):
 	def queue_command(self, ctype, ip, cmd):
 		machine = self.machines[ip]
 		machine.queue_command(ctype, cmd)
+
+	def remove_command(self, ip, cmd_id):
+		machine = self.machines[ip]
+		machine.remove_command(cmd_id)

@@ -40,13 +40,29 @@ class MachineMenu(Menu):
             print()
 
     def menu_Remove_Command(self, **kwargs):
-        print("Removing Command ...")
+        model = kwargs["model"]
+        table = PrettyTable()
+        table.field_names = ["#", "UID", "Command"]
+        host = ""
+        while host not in model.get_hosts():
+            host = input("Enter IP: ")
+        for i, cmd in enumerate(model.get_queued_commands(host)):
+            table.add_row([i, cmd[2], cmd[1]])
+        print(table)
+        uid = int(input("Enter Command UID: "))
+        model.remove_command(host, uid)
+        print(f"Command {uid} Deleted!")
+        time.sleep(2)
 
     def menu_View_Commands(self, **kwargs):
+        print("[view-commands] <ip>")
         table = PrettyTable()
-        table.field_names = ["ID", "Command"]
-        host = input("Enter IP: ")
-        for i, cmd in enumerate(kwargs["model"].get_queued_commands(host)):
-            table.add_row([i, cmd[1]])
+        table.field_names = ["#", "UID", "Command"]
+        model = kwargs["model"]
+        host = ""
+        while host not in model.get_hosts():
+            host = input("[view-commands]> ")
+        for i, cmd in enumerate(model.get_queued_commands(host)):
+            table.add_row([i, cmd[2], cmd[1]])
         print(table)
         input("Press any key to continue...")
