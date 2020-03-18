@@ -33,9 +33,9 @@ class CLIDriver(object):
     def run(self):
         while True:
             self.print_banner()
-            self.current_menu.print_header(model=self.model)
+            self.current_menu.print_header()
             self.current_menu.display_actions()
-            self.current_menu.act(model=self.model)
+            self.current_menu.act()
 
     @staticmethod
     def generate(model):
@@ -48,6 +48,7 @@ class CLIDriver(object):
 
         cli_driver = CLIDriver(main_menu, menus, model)
         Menu.context_driver = cli_driver
+        Menu.model = model
         return cli_driver
 
 

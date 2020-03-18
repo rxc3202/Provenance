@@ -6,6 +6,7 @@ import sys
 
 class Menu(ABC):
 
+    model = None
     context_driver = None
     action_delimiter = "menu_"
 
@@ -35,15 +36,16 @@ class Menu(ABC):
         """
         for i, item in enumerate(self.actions):
             self.print(f"[{i}] {item[0]}", Fore.WHITE)
+        print()
 
-    def act(self, **kwargs):
+    def act(self):
         """
         The method that runs the main function of this menu
         :return: None
         """
         try:
             choice = int(input(self.prompt))
-            self.actions[choice][1](**kwargs)
+            self.actions[choice][1]()
         except (ValueError, IndexError):
             pass
         except (KeyboardInterrupt, EOFError):
