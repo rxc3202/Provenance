@@ -53,7 +53,7 @@ class ProvenanceServer(UDPServer):
 			self.machines[addr].update_handler(request, client_address)
 		else:
 			self.machines[addr] = self.RequestHandlerClass(
-				request=request, ip=client_address[0], socket=client_address[1], serverinfo=(addr, port))
+				request=request, client_address=client_address, serverinfo=(addr, port))
 		return self.finish_request(request, client_address)
 
 	def finish_request(self, request, client_address):
@@ -88,7 +88,7 @@ class ThreadedProvenanceServer(ProvenanceServer):
 			self.machines[addr].update_handler(request, client_address)
 		else:
 			self.machines[addr] = self.RequestHandlerClass(
-				request=request, ip=client_address[0], socket=client_address[1], serverinfo=(addr, port))
+				request=request, client_address=client_address, serverinfo=(addr, port))
 
 		thread = threading.Thread(
 			target=self.finish_request,
@@ -137,7 +137,7 @@ class ThreadedProvenanceServer(ProvenanceServer):
 		machine.remove_command(cmd_id)
 
 	def add_host(self, ip):
-		new_handler = self.RequestHandlerClass(request=None, ip=ip, socket=None, serverinfo=self.server_address)
+		new_handler = self.RequestHandlerClass(request=None, client_address=(ip, None), serverinfo=self.server_address)
 		if ip not in self.machines.keys():
 			self.machines[ip] = new_handler
 			return True

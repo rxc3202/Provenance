@@ -3,6 +3,9 @@ class Controller(object):
     def __init__(self, server):
         self.server = server
 
+    def shutdown(self):
+        self.server.server_close()
+
     # Interactive commands
     def queue_command(self, ctype, ip, command):
         """

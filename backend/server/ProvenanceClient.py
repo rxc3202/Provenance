@@ -11,25 +11,22 @@ class ProvenanceClientHandler(BaseRequestHandler):
     client_count = 0
 
     """ Builtin Functions"""
-    def __init__(self, request, ip, socket, serverinfo, hostname="", handler=None):
+    def __init__(self, request, client_address, serverinfo, hostname="", handler=None):
         # Superclass initialization
         self.request = request
-        self.client_address = None
+        self.client_address = client_address
         self.server = serverinfo
 
         # Subclass Initialization
-        self.ip = ip
-        self.socket = socket
         self.hostname = hostname or f"Client_{self.client_count}"
-        self.queued_commands = [Command(CommandType.PS, "whoami", 1000), Command(CommandType.PS, "ls", 1001)]
+        self.queued_commands = []
         self.sent_commands = []
         self.command_count = 0
         # The model that tracks each controlled machine
         # TODO: somehow dynamically assess the protocol (maybe set up multiple ports)
         if request:
             self.protocol_handler = handler or handlers.dns.DNSHandler(
-                #ip=client_address[0, socket=request[1]
-                ip=self.ip, socket=self.socket
+                ip=client_address[0], socket=request[1]
             )
         else:
             self.protocol_handler = None
@@ -52,12 +49,10 @@ class ProvenanceClientHandler(BaseRequestHandler):
         :return: None
         """
         self.client_address = client_address
-        self.ip = client_address[0]
         self.request = request
-        self.socket = request[1]
         if not self.protocol_handler:
             self.protocol_handler = handlers.dns.DNSHandler(
-                ip=self.ip, socket=self.socket
+                ip=client_address[0], socket=request[1]
             )
 
     def handle(self):
@@ -126,9 +121,9 @@ class ProvenanceClientHandler(BaseRequestHandler):
         return self.hostname
 
     def get_ip(self):
-        if not self.ip:
+        if not self.client_address:
             return "N/A"
-        return self.ip
+        return self.client_address[0]
 
 
 

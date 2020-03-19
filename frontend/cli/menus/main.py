@@ -1,5 +1,6 @@
 from frontend.cli.menus.menu import Menu
 import os
+import sys
 
 
 class WelcomeMenu(Menu):
@@ -17,6 +18,10 @@ class WelcomeMenu(Menu):
 
     def menu_View_Logs(self, **kwargs):
         pass
+
+    def menu_Exit(self):
+        self.model.shutdown()
+        sys.exit(0)
 
     def menu_Machines(self, **kwargs):
         self.switch_menu("machine")

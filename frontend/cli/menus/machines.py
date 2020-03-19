@@ -2,20 +2,20 @@ import shlex
 from frontend.cli.menus.menu import Menu
 from prettytable import PrettyTable
 import time
+import os
 
 
 class MachineMenu(Menu):
 
-    def print_header(self):
-        self._display_hosts()
-
-    def _display_hosts(self):
+    def menu_Display_Hosts(self):
+        os.system("cls||clear")
         table = PrettyTable()
         table.field_names = ["Hostname", "IP Address", "Last Active", "Queued Commands"]
         for ip in self.model.get_hosts():
             info = self.model.get_machine_info(ip)
             table.add_row([f for f in info])
         print(table)
+        input("Press any key to continue...")
 
     # Menu Commands
     def menu_Back(self, **kwargs):

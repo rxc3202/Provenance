@@ -49,8 +49,7 @@ class Menu(ABC):
         except (ValueError, IndexError):
             pass
         except (KeyboardInterrupt, EOFError):
-            os.system("cls||clear")
-            sys.exit(0)
+            pass
 
     @staticmethod
     def print(string, color, end="\n"):
