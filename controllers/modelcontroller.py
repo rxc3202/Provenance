@@ -51,15 +51,12 @@ class Controller(object):
         info = self.server.get_host_info(ip)
         return info.hostname
 
-    def get_num_queued_commands(self, ip):
-        info = self.server.get_host_info(ip)
-        return info.cmd_count
-
     def get_last_active(self, ip):
         info = self.server.get_host_info(ip)
         return info.active
 
     def get_machine_info(self, ip):
+        #return ("DNS", "test.rit.edu", "127.0.0.1", "3m", "whoami")
         return self.server.get_machine_info(ip)
 
     def get_hosts(self):

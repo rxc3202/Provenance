@@ -18,7 +18,7 @@ class DNSHandler(ProtocolHandler):
         self.latest_request_id = None
 
     def __repr__(self):
-        return f"DNSHandler{{{self.ip}, {self.record_type}}}"
+        return "DNS"
 
     def handle_request(self, raw_request, port, cmd):
         data = raw_request[0].strip()

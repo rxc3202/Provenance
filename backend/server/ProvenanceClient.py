@@ -125,6 +125,8 @@ class ProvenanceClientHandler(BaseRequestHandler):
             return "N/A"
         return self.client_address[0]
 
+    def beacon_type(self):
+        return self.protocol_handler.__repr__()
 
 
 

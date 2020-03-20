@@ -121,8 +121,11 @@ class ThreadedProvenanceServer(ProvenanceServer):
 
 	def get_machine_info(self, host):
 		host = self.machines[host]
-		return ClientInfo(host.get_hostname(), host.get_ip(),
-						  host.get_last_active(), len(host.get_queued_commands()))
+		return ClientInfo(host.beacon_type(),
+						  host.get_hostname(),
+						  host.get_ip(),
+						  host.get_last_active(),
+						  host.get_queued_commands())
 
 	def get_queued_commands(self, host):
 		machine = self.machines[host]

@@ -9,6 +9,7 @@ import threading
 import time
 import logging
 from frontend.cli.clidriver import CLIDriver
+from frontend.cli.menus.asciiMenu import ProvenanceCLI
 from backend.server.ProvenanceClient import ProvenanceClientHandler
 from backend.server.ProvenanceServer import ProvenanceServer, ThreadedProvenanceServer
 import backend.util.arguments as argopts
@@ -46,8 +47,10 @@ def main():
 
 	# Initialize Frontend
 	if args.ui == "cli":
-		cli = CLIDriver.generate(controller)
-		frontend_thread = threading.Thread(target=cli.run)
+		#cli = CLIDriver.generate(controller)
+		#frontend_thread = threading.Thread(target=cli.run)
+		ProvenanceCLI.model = controller
+		frontend_thread = threading.Thread(target=ProvenanceCLI.run)
 		frontend_thread.start()
 
 
