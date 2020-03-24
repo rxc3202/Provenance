@@ -11,7 +11,7 @@ class ProvenanceClientHandler(BaseRequestHandler):
     client_count = 0
 
     """ Builtin Functions"""
-    def __init__(self, request, client_address, serverinfo, hostname="", handler=None):
+    def __init__(self, request, client_address, serverinfo, hostname=None, handler=None):
         # Superclass initialization
         self.request = request
         self.client_address = client_address

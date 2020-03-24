@@ -139,8 +139,9 @@ class ThreadedProvenanceServer(ProvenanceServer):
 		machine = self.machines[ip]
 		machine.remove_command(cmd_id)
 
-	def add_host(self, ip):
-		new_handler = self.RequestHandlerClass(request=None, client_address=(ip, None), serverinfo=self.server_address)
+	def add_host(self, ip, **kwargs):
+		new_handler = self.RequestHandlerClass(request=None, client_address=(ip, None),
+											   serverinfo=self.server_address, **kwargs)
 		if ip not in self.machines.keys():
 			self.machines[ip] = new_handler
 			return True
