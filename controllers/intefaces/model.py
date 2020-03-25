@@ -1,41 +1,25 @@
-from frontend.util.structs import ClientInfo
-from controllers.intefaces.model import ModelInterface
+from abc import ABC, abstractmethod
 
 
-class Controller(object):
-
-    def __init__(self, server):
-        self._server: ModelInterface = server
-        self._current_machine = None
-
-    # Backend Commands
-    @property
-    def current_machine(self):
-        return self._current_machine
-
-    def reset_current(self):
-        self._current_machine = None
-
-    def select_current(self, ip):
-        if ip in self._server.get_hosts():
-            self._current_machine = ip
-        else:
-            self._current_machine = None
+class ModelInterface(ABC):
 
     # ===========================================
     # Global Server Functions
     # ===========================================
 
+    @abstractmethod
     def shutdown(self):
-        self._server.shutdown()
+        raise NotImplementedError("shutdown() must be implemented in concrete subclass")
 
+    @abstractmethod
     def get_hosts(self):
         """
         Get all the IP addresses that are currently being tracked
         :return: a list of IP addresses as strings
         """
-        return self._server.get_hosts()
+        raise NotImplementedError("get_hosts() must be implemented in concrete subclass")
 
+    @abstractmethod
     def remove_host(self, ip):
         """
         Remove a host from the C2 Server. The server will no longer send
@@ -43,8 +27,9 @@ class Controller(object):
         :param ip: the IP address
         :return: None
         """
-        pass
+        raise NotImplementedError("remove_host() must be implemented in concrete subclass")
 
+    @abstractmethod
     def add_host(self, ip, **kwargs):
         """
         Add a host to the C2 Server. The server will attempt to send commands
@@ -52,12 +37,13 @@ class Controller(object):
         :param ip:
         :return: None
         """
-        return self._server.add_host(ip, **kwargs)
+        raise NotImplementedError("add_host() must be implemented in concrete subclass")
 
     # ===========================================
     # Host Specific Commands
     # ===========================================
 
+    @abstractmethod
     def queue_command(self, ctype, ip, command):
         """
         Queue a single command on the given host
@@ -65,51 +51,56 @@ class Controller(object):
         :param command: the powershell command to add
         :return: None
         """
-        self._server.queue_command(ctype, ip, command)
+        raise NotImplementedError("queued_command() must be implemented in concrete subclass")
 
+    @abstractmethod
     def remove_command(self, ip, cmd_id):
         """
         Remove a single command on the given host
         :param ip: the IP of the host
-        :param cmd_id: the powershell command to remove
+        :param command: the powershell command to remove
         :return: None
         """
-        self._server.remove_command(ip, cmd_id)
+        raise NotImplementedError("remove_command() must be implemented in concrete subclass")
 
-    def get_queued_commands(self, ip):
-        """
-        Get the queued commands for a given IP address
-        :param ip: the string IP address of the machine
-        :return: a list of Command structs
-        """
-        return self._server.get_queued_commands(ip)
-
-    def get_sent_commands(self, ip):
-        return self._server.get_sent_commands(ip)
-
+    @abstractmethod
     def get_hostname(self, ip):
         """
         Get the hostname of a given IP address
         :param ip: the ip of the host
         :return: a string representing the hostname else N/A
         """
-        info = self._server.get_machine_info(ip)
-        if info.hostname:
-            return info.hostname
-        return "N/A"
+        raise NotImplementedError("get_hostname() must be implemented in concrete subclass")
 
+    @abstractmethod
+    def get_queued_commands(self, ip):
+        """
+        Get the queued commands for a given IP address
+        :param ip: the string IP address of the machine
+        :return: a list of Command structs
+        """
+        raise NotImplementedError("get_queued_commands() must be implemented in concrete subclass")
+
+    @abstractmethod
+    def get_sent_commands(self, ip):
+        """
+        Get the queued commands for a given IP address
+        :param ip: the string IP address of the machine
+        :return: a list of Command structs
+        """
+        raise NotImplementedError("get_sent_commands() must be implemented in concrete subclass")
+
+    @abstractmethod
     def get_last_active(self, ip):
         """
         Get the last known time the client beaconed out to Provenance
         :param ip: the ip of the host to check
         :return: a string in minutes
         """
-        info = self._server.get_machine_info(ip)
-        if info.active:
-            return info.active
-        return "N/A"
+        raise NotImplementedError("get_last_active() must be implemented in concrete subclass")
 
+    @abstractmethod
     def get_machine_info(self, ip):
-        return ClientInfo(*self._server.get_machine_info(ip))
+        raise NotImplementedError("get_machine_info() must be implemented in concrete subclass")
 
 

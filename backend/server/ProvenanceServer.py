@@ -3,6 +3,7 @@ import threading
 from socketserver import UDPServer
 from backend.util.arguments import parse_ips, ip_in_list
 from frontend.util.structs import ClientInfo
+from controllers.intefaces.model import ModelInterface
 
 
 class ProvenanceServer(UDPServer):
@@ -61,7 +62,7 @@ class ProvenanceServer(UDPServer):
 		return self.machines[addr].handle()
 
 
-class ThreadedProvenanceServer(ProvenanceServer):
+class ThreadedProvenanceServer(ProvenanceServer, ModelInterface):
 	""" A Threaded version of the Provenance server """
 
 	# Decides how threads will act upon termination of the
@@ -106,7 +107,11 @@ class ThreadedProvenanceServer(ProvenanceServer):
 		addr = client_address[0]
 		return self.machines[addr].handle()
 
-	def server_close(self):
+	# ===========================================
+	# Model Interface Methods
+	# ===========================================
+
+	def shutdown(self):
 		super().server_close()
 		if self.block_on_close:
 			_threads = self.threads
@@ -115,29 +120,8 @@ class ThreadedProvenanceServer(ProvenanceServer):
 				for t in _threads:
 					t.join()
 
-	# Querying interface methods
 	def get_hosts(self):
 		return self.machines.keys()
-
-	def get_machine_info(self, host):
-		host = self.machines[host]
-		return ClientInfo(host.beacon_type(),
-						  host.get_hostname(),
-						  host.get_ip(),
-						  host.get_last_active(),
-						  host.get_queued_commands())
-
-	def get_queued_commands(self, host):
-		machine = self.machines[host]
-		return machine.get_queued_commands()
-
-	def queue_command(self, ctype, ip, cmd):
-		machine = self.machines[ip]
-		machine.queue_command(ctype, cmd)
-
-	def remove_command(self, ip, cmd_id):
-		machine = self.machines[ip]
-		machine.remove_command(cmd_id)
 
 	def add_host(self, ip, **kwargs):
 		new_handler = self.RequestHandlerClass(request=None, client_address=(ip, None),
@@ -147,3 +131,33 @@ class ThreadedProvenanceServer(ProvenanceServer):
 			return True
 		return False
 
+	def get_machine_info(self, host):
+		host = self.machines[host]
+		return ClientInfo(host.beacon_type, host.get_hostname, host.get_ip, host.get_last_active, host.queued_commands)
+
+	def get_queued_commands(self, host):
+		machine = self.machines[host]
+		return machine.get_queued_commands()
+
+	def get_sent_commands(self, host):
+		machine = self.machines[host]
+		return machine.get_sent_commands()
+
+	def queue_command(self, ctype, ip, cmd):
+		machine = self.machines[ip]
+		machine.queue_command(ctype, cmd)
+
+	def remove_command(self, ip, cmd_id):
+		machine = self.machines[ip]
+		machine.remove_command(cmd_id)
+
+	def remove_host(self, ip):
+		pass
+
+	def get_last_active(self, ip):
+		machine = self.machines[ip]
+		return machine.last_active
+
+	def get_hostname(self, ip):
+		machine = self.machines[ip]
+		return machine.get_hostname()
