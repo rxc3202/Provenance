@@ -102,7 +102,7 @@ class MainMenu(Frame):
         raise NextScene("Delete Host")
 
     def _add_command(self):
-        pass
+        raise NextScene("Add Command")
 
     def _remove_command(self):
         pass

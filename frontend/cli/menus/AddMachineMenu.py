@@ -1,6 +1,7 @@
 from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
     Button, TextBox, Widget, MultiColumnListBox, PopupMenu, PopUpDialog, DropdownList
 from asciimatics.exceptions import NextScene
+from controllers.intefaces.model import ModelInterface
 
 
 class AddMachineMenu(Frame):
@@ -11,7 +12,7 @@ class AddMachineMenu(Frame):
         super().__init__(screen, height=screen.height //2, width=screen.width //2, can_scroll=False, title="Add Host",
                          hover_focus=True)
 
-        self.model = model
+        self._model: ModelInterface = model
 
         # Initialize Widgets
         self._confirm_button = Button("Confirm", self._confirm)
@@ -49,5 +50,5 @@ class AddMachineMenu(Frame):
 
     def _confirm(self):
         self.save()
-        self.model.add_host(self.data["ip"], hostname=self.data["hostname"])
+        self._model.add_host(self.data["ip"], hostname=self.data["hostname"])
         raise NextScene("Main")

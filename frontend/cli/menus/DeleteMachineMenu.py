@@ -1,6 +1,7 @@
 from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
     Button, TextBox, Widget, MultiColumnListBox, PopupMenu, PopUpDialog, DropdownList
 from asciimatics.exceptions import NextScene
+from controllers.intefaces.model import ModelInterface
 
 
 class DeleteMachineMenu(Frame):
@@ -11,7 +12,7 @@ class DeleteMachineMenu(Frame):
         super().__init__(screen, height=screen.height // 5, width=screen.width // 2,
                          can_scroll=False, title="Delete Host", hover_focus=True)
 
-        self.model = model
+        self.model: ModelInterface = model
 
         self.set_theme("default")
 

@@ -1,8 +1,7 @@
 from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
     Button, TextBox, Widget, MultiColumnListBox, PopupMenu, PopUpDialog, DropdownList
 from asciimatics.exceptions import NextScene
-from frontend.util.structs import ClientInfo
-import sys
+from controllers.intefaces.model import ModelInterface
 
 
 class MachineDetailsMenu(Frame):
@@ -13,7 +12,7 @@ class MachineDetailsMenu(Frame):
         super().__init__(screen, height=screen.height * 2 // 3, width=screen.width * 2 // 3,
                          can_scroll=False, title="View Host", hover_focus=True)
 
-        self._model = model
+        self._model: ModelInterface = model
 
         # Initialize Widgets
         self._confirm_button = Button("Finish", self._confirm)
