@@ -20,7 +20,7 @@ class MainMenu(Frame):
         self._add_host_button = Button("Add Host", self._add_host)
         self._rem_host_button = Button("Remove Host", self._remove_host)
         self._add_cmd_button = Button("Add CMD", self._add_command)
-        self._rem_cmd_button = Button("Remove CMD", self._remove_command)
+        self._rem_cmd_button = Button("Settings", self._options_command)
         self._refresh_button = Button("Refresh", self._reload_page)
         self._exit_button = Button("Exit", self._exit_command)
 
@@ -104,8 +104,8 @@ class MainMenu(Frame):
     def _add_command(self):
         raise NextScene("Add Command")
 
-    def _remove_command(self):
-        pass
+    def _options_command(self):
+        raise NextScene("Settings")
 
     def _exit_command(self):
         self.model.shutdown()
