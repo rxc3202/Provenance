@@ -11,21 +11,16 @@ from frontend.cli.clidriver import ProvenanceCLI
 from backend.server.ProvenanceClient import ProvenanceClientHandler
 from backend.server.ProvenanceServer import ProvenanceServer, ThreadedProvenanceServer
 import backend.util.arguments as argopts
-from controllers.modelcontroller import Controller
-
-logger = logging.getLogger("Provenance")
-logging.basicConfig(level=logging.WARNING, format="[%(levelname)s] %(message)s")
+from controllers import Controller, LoggingController
 
 
 def main():
 	global args
 	args = argopts.parse_arguments()
-	logger.setLevel(argopts.verbosity(args.verbose))
 	socket = (args.interface, args.port)
 
 	# Initialize Backend
 	try:
-		logger.critical(f"Server starting on {socket[0]}:{socket[1]}.")
 		if args.threaded:
 			server = ThreadedProvenanceServer(server_address=socket, handler=ProvenanceClientHandler, discovery=args.discovery)
 			# Start a thread with the server -- that thread will then start one
@@ -40,12 +35,16 @@ def main():
 	except KeyboardInterrupt:
 		sys.exit(0)
 
-	# Initialize Controller
-	controller = Controller(server)
+	# Initialize Controllers for model-ui interactions
+	model_controller = Controller(server)
+	logger_controller = LoggingController()
+	logger = logging.getLogger("Provenance")
+	logger.critical(f"Server starting on {socket[0]}:{socket[1]}.")
 
 	# Initialize Frontend
 	if args.ui == "cli":
-		ProvenanceCLI.model = controller
+		ProvenanceCLI.model = model_controller
+		ProvenanceCLI.logger = logger_controller
 		frontend_thread = threading.Thread(target=ProvenanceCLI.run)
 		frontend_thread.start()
 

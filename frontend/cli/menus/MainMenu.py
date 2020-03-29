@@ -8,12 +8,13 @@ import sys
 class MainMenu(Frame):
 
     def __init__(self, screen, model):
-        super(MainMenu, self).__init__(screen, screen.height * 3 //4,
+        super(MainMenu, self).__init__(screen, screen.height * 3 // 4,
                                        screen.width, hover_focus=True,
                                        can_scroll=False, on_load=self._reload_page,
                                        title="Main Menu", y=0)
 
         self.model = model
+        self._last_frame = 0
 
         # Init all widgets
         self._machine_list_widget = self._init_machine_list_widget()
@@ -39,6 +40,8 @@ class MainMenu(Frame):
         button_layout.add_widget(self._rem_cmd_button, 4)
         button_layout.add_widget(self._exit_button, 5)
 
+        self._details_layout = details_layout
+        self._button_layout = button_layout
         # Confirm Frame
         self.fix()
 
@@ -84,7 +87,7 @@ class MainMenu(Frame):
             # TODO: some weird error if entering when all fields are none
             return
         # Get the widget managed by asciimatics
-        widget = self.info_layout.find_widget("machines")
+        widget = self._details_layout.find_widget("machines")
         # Get the option displayed on the menu in the MutliColumnListBox
         options = widget.options[id]
         # Unpack the data into a more usable struct
@@ -109,17 +112,52 @@ class MainMenu(Frame):
         self.model.shutdown()
         sys.exit(0)
 
+    def _update(self, frame_no):
+        # Refresh the list view if needed
+        if frame_no - self._last_frame >= self.frame_update_count or self._last_frame == 0:
+            self._last_frame = frame_no
+        self._reload_page()
+        super()._update(frame_no)
+
+    @property
+    def frame_update_count(self):
+        # Update every 2 seconds
+        return 40
+
 
 class LogMenu(Frame):
 
     def __init__(self, screen, model):
-        super(LogMenu, self).__init__(screen, screen.height//4, screen.width, hover_focus=True,
-                                       can_scroll=True, on_load=None, title="Logs", y=screen.height* 3 //4)
+        super(LogMenu, self).__init__(screen, screen.height//4, screen.width, hover_focus=False,
+                                      can_scroll=True, on_load=None, title="Logs", y=screen.height * 3 // 4 )
         self._model = model
+        self._last_frame = 0
 
-        self._logs = ListBox(Widget.FILL_FRAME, [(1, "test")])
+        # Initialize Widgets
+        self._logs = ListBox(Widget.FILL_FRAME, [(f"test_{i}", i) for i in range(25)])
 
+        # Fix Widgets
+        layout = Layout([1])
+        self.add_layout(layout)
+        layout.add_widget(self._logs)
+
+        # Fix the layouts to the Frame
         self.fix()
+
+    def _reload_page(self):
+        pass
+
+    def _update(self, frame_no):
+        # Refresh the list view if needed
+        if frame_no - self._last_frame >= self.frame_update_count or self._last_frame == 0:
+            self._last_frame = frame_no
+        self._reload_page()
+        super()._update(frame_no)
+
+    @property
+    def frame_update_count(self):
+        # Update every 2 seconds
+        return 40
 
 
 

@@ -4,12 +4,13 @@ from asciimatics.scene import Scene
 from asciimatics.screen import Screen
 from asciimatics.exceptions import ResizeScreenError
 import sys
-from controllers.intefaces.model import ModelInterface
+from controllers import Controller, LoggingController
 
 
 class ProvenanceCLI(object):
 
-    model: ModelInterface = None
+    model: Controller = None
+    logger: LoggingController = None
     last_scene: Scene = None
 
     @classmethod
