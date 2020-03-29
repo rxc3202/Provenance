@@ -8,10 +8,10 @@ import sys
 class MainMenu(Frame):
 
     def __init__(self, screen, model):
-        super(MainMenu, self).__init__(screen, screen.height,
+        super(MainMenu, self).__init__(screen, screen.height * 3 //4,
                                        screen.width, hover_focus=True,
-                                       can_scroll=True, on_load=self._reload_page,
-                                       title="Main Menu")
+                                       can_scroll=False, on_load=self._reload_page,
+                                       title="Main Menu", y=0)
 
         self.model = model
 
@@ -25,22 +25,20 @@ class MainMenu(Frame):
         self._exit_button = Button("Exit", self._exit_command)
 
         # Generation
-        upper_half = Layout([1], fill_frame=True)
-        self.add_layout(upper_half)
-        upper_half.add_widget(self._machine_list_widget)
-        upper_half.add_widget(Divider())
+        details_layout = Layout([1], fill_frame=True)
+        self.add_layout(details_layout)
+        details_layout.add_widget(self._machine_list_widget)
+        details_layout.add_widget(Divider())
 
-        actions_list = Layout([1, 1, 1, 1, 1, 1])
-        self.add_layout(actions_list)
-        actions_list.add_widget(self._refresh_button, 0)
-        actions_list.add_widget(self._add_host_button, 1)
-        actions_list.add_widget(self._rem_host_button, 2)
-        actions_list.add_widget(self._add_cmd_button, 3)
-        actions_list.add_widget(self._rem_cmd_button, 4)
-        actions_list.add_widget(self._exit_button, 5)
+        button_layout = Layout([1, 1, 1, 1, 1, 1])
+        self.add_layout(button_layout)
+        button_layout.add_widget(self._refresh_button, 0)
+        button_layout.add_widget(self._add_host_button, 1)
+        button_layout.add_widget(self._rem_host_button, 2)
+        button_layout.add_widget(self._add_cmd_button, 3)
+        button_layout.add_widget(self._rem_cmd_button, 4)
+        button_layout.add_widget(self._exit_button, 5)
 
-        self.info_layout = upper_half
-        self.action_layout = actions_list
         # Confirm Frame
         self.fix()
 
@@ -60,7 +58,7 @@ class MainMenu(Frame):
             titles=fields,
             add_scroll_bar=True,
             on_select=self._view_host,
-            name="machines"
+            name="machines",
         )
 
     # Backend Methods
@@ -110,3 +108,19 @@ class MainMenu(Frame):
     def _exit_command(self):
         self.model.shutdown()
         sys.exit(0)
+
+
+class LogMenu(Frame):
+
+    def __init__(self, screen, model):
+        super(LogMenu, self).__init__(screen, screen.height//4, screen.width, hover_focus=True,
+                                       can_scroll=True, on_load=None, title="Logs", y=screen.height* 3 //4)
+        self._model = model
+
+        self._logs = ListBox(Widget.FILL_FRAME, [(1, "test")])
+
+        self.fix()
+
+
+
+

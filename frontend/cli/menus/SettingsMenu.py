@@ -17,12 +17,14 @@ class SettingsMenu(Frame):
         self._confirm_button = Button("Confirm", self._confirm)
         self._cancel_button = Button("Cancel", self._cancel)
         self._discovery = CheckBox("Discover Hosts", name="discovery")
+        self._logs = CheckBox("Show Server Logs", name="logs")
 
 
         # Create and Generate Layouts
         layout = Layout([1], fill_frame=True)
         self.add_layout(layout)
         layout.add_widget(self._discovery)
+        layout.add_widget(self._logs)
 
 
         button_layout = Layout([1, 1])
