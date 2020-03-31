@@ -2,16 +2,18 @@ from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
     Button, TextBox, Widget, CheckBox, DropdownList
 from asciimatics.exceptions import NextScene
 import logging
+from controllers import *
 
 
 class SettingsMenu(Frame):
 
     reset_data = {}
 
-    def __init__(self, screen, model):
+    def __init__(self, screen, model, logger):
         super().__init__(screen, height=screen.height // 2, width=screen.width // 2,
                          can_scroll=False, title="Settings", hover_focus=True)
-        self._model = model
+        self._logger: LoggingController = logger
+        self._model: ModelController = model
         self.set_theme("default")
 
         # Initialize Widgets
@@ -26,6 +28,7 @@ class SettingsMenu(Frame):
                                         ("Critical", logging.CRITICAL)],
                                        label="Logging Level: "
                                        )
+        self._refreshrate = Text(label="Refresh Rate", name="refresh", on_change=self.update_refresh)
 
         # Create and Generate Layouts
         layout = Layout([1], fill_frame=True)
@@ -33,6 +36,7 @@ class SettingsMenu(Frame):
         layout.add_widget(self._discovery)
         layout.add_widget(self._display_logs)
         layout.add_widget(self._log_level)
+        layout.add_widget(self._refreshrate)
 
         button_layout = Layout([1, 1])
         self.add_layout(button_layout)
@@ -41,6 +45,14 @@ class SettingsMenu(Frame):
 
         # Save Layouts
         self.fix()
+
+    # Widget Specific Fnctions
+    def update_refresh(self):
+        """
+        Propogate the refresh rate to Main Menu
+        :return: None
+        """
+        pass
 
     def reset(self):
         super(SettingsMenu, self).reset()

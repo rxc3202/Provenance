@@ -115,48 +115,57 @@ class MainMenu(Frame):
         sys.exit(0)
 
     def _update(self, frame_no):
-        # Refresh the list view if needed
-        if frame_no - self._last_frame >= self.frame_update_count or self._last_frame == 0:
-            self._last_frame = frame_no
         self._reload_page()
         super()._update(frame_no)
 
     @property
     def frame_update_count(self):
         # Update every 2 seconds
-        return 40
+        update = 2
+        return update * 20
 
 
 class LogMenu(Frame):
 
+    MAX_LOG_COUNT = 50
+
     def __init__(self, screen, model, logger):
-        super(LogMenu, self).__init__(screen, screen.height//4, screen.width, hover_focus=False,
-                                      can_scroll=True, on_load=None, title="Logs", y=screen.height * 3 // 4 )
+        super(LogMenu, self).__init__(screen, screen.height//4, screen.width, hover_focus=True,
+                                      can_scroll=False, on_load=None,
+                                      title="Logs", y=screen.height * 3 // 4)
         self._logger: LoggingController = logger
         self._model: ModelController = model
         self._last_frame = 0
 
         # Initialize Widgets
-        self._logs = ListBox(Widget.FILL_FRAME, [(f"test_{i}", i) for i in range(25)])
-        self._button = Button("Test", on_click=self._reload_page)
+        self._log_list = ListBox(Widget.FILL_FRAME, [], add_scroll_bar=True)
+        self._button = Button("Test", on_click=self._reload_frame)
 
         # Fix Widgets
         layout = Layout([1])
         self.add_layout(layout)
-        layout.add_widget(self._logs)
-        layout.add_widget(self._button)
+        layout.add_widget(self._log_list)
+        # layout.add_widget(self._button)
 
         # Fix the layouts to the Frame
         self.fix()
 
-    def _reload_page(self):
-        print(self._logger.get_messages())
+    def _reload_frame(self):
+        new_logs = self._logger.get_messages()
+        count = len(self._log_list.options)
+        rendered_logs = [(msg, i) for i, msg in enumerate(new_logs, start=count)]
+        if len(self._log_list.options) > self.MAX_LOG_COUNT:
+            self._log_list.options = rendered_logs
+        else:
+            self._log_list.options.extend(rendered_logs)
+
+        # This is the selected value that has focus on the widget
+        # see https://github.com/peterbrittain/asciimatics/blob/master/asciimatics/widgets.py#L2545
+        if len(self._log_list.options) > 0:
+            self._log_list.value = self._log_list.options[-1][1]
 
     def _update(self, frame_no):
-        # Refresh the list view if needed
-        if frame_no - self._last_frame >= self.frame_update_count or self._last_frame == 0:
-            self._last_frame = frame_no
-        # self._reload_page()
+        self._reload_frame()
         super()._update(frame_no)
 
     @property
