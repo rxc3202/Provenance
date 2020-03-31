@@ -11,7 +11,7 @@ from frontend.cli.clidriver import ProvenanceCLI
 from backend.server.ProvenanceClient import ProvenanceClientHandler
 from backend.server.ProvenanceServer import ProvenanceServer, ThreadedProvenanceServer
 import backend.util.arguments as argopts
-from controllers import Controller, LoggingController
+from controllers import ModelController, LoggingController
 
 
 def main():
@@ -36,8 +36,8 @@ def main():
 		sys.exit(0)
 
 	# Initialize Controllers for model-ui interactions
-	model_controller = Controller(server)
-	logger_controller = LoggingController()
+	model_controller = ModelController(server)
+	logger_controller = LoggingController("logs/provenance.log")
 	logger = logging.getLogger("Provenance")
 	logger.critical(f"Server starting on {socket[0]}:{socket[1]}.")
 

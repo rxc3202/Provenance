@@ -2,6 +2,8 @@ from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
     Button, TextBox, Widget, MultiColumnListBox, PopupMenu, PopUpDialog, DropdownList
 from asciimatics.exceptions import NextScene
 from frontend.util.structs import ClientInfo
+from controllers.loggingcontroller import LoggingController
+from controllers.modelcontroller import ModelController
 import sys
 
 
@@ -127,31 +129,34 @@ class MainMenu(Frame):
 
 class LogMenu(Frame):
 
-    def __init__(self, screen, model):
+    def __init__(self, screen, model, logger):
         super(LogMenu, self).__init__(screen, screen.height//4, screen.width, hover_focus=False,
                                       can_scroll=True, on_load=None, title="Logs", y=screen.height * 3 // 4 )
-        self._model = model
+        self._logger: LoggingController = logger
+        self._model: ModelController = model
         self._last_frame = 0
 
         # Initialize Widgets
         self._logs = ListBox(Widget.FILL_FRAME, [(f"test_{i}", i) for i in range(25)])
+        self._button = Button("Test", on_click=self._reload_page)
 
         # Fix Widgets
         layout = Layout([1])
         self.add_layout(layout)
         layout.add_widget(self._logs)
+        layout.add_widget(self._button)
 
         # Fix the layouts to the Frame
         self.fix()
 
     def _reload_page(self):
-        pass
+        print(self._logger.get_messages())
 
     def _update(self, frame_no):
         # Refresh the list view if needed
         if frame_no - self._last_frame >= self.frame_update_count or self._last_frame == 0:
             self._last_frame = frame_no
-        self._reload_page()
+        # self._reload_page()
         super()._update(frame_no)
 
     @property

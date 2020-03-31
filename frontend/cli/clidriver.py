@@ -4,12 +4,12 @@ from asciimatics.scene import Scene
 from asciimatics.screen import Screen
 from asciimatics.exceptions import ResizeScreenError
 import sys
-from controllers import Controller, LoggingController
+from controllers import ModelController, LoggingController
 
 
 class ProvenanceCLI(object):
 
-    model: Controller = None
+    model: ModelController = None
     logger: LoggingController = None
     last_scene: Scene = None
 
@@ -17,7 +17,7 @@ class ProvenanceCLI(object):
     def run(cls):
         def driver(screen, scene):
             scenes = [
-                Scene([MainMenu(screen, cls.model), LogMenu(screen, cls.model)], -1, name="Main"),
+                Scene([MainMenu(screen, cls.model), LogMenu(screen, cls.model, cls.logger)], -1, name="Main"),
                 Scene([MainMenu(screen, cls.model), AddMachineMenu(screen, cls.model)], -1, name="Add Host"),
                 Scene([MainMenu(screen, cls.model), DeleteMachineMenu(screen, cls.model)], -1, name="Delete Host"),
                 Scene([MachineDetailsMenu(screen, cls.model)], -1, name="View Host"),

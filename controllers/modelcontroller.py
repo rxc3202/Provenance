@@ -2,7 +2,7 @@ from frontend.util.structs import ClientInfo
 from controllers.intefaces.model import ModelInterface
 
 
-class Controller(object):
+class ModelController(object):
 
     def __init__(self, server):
         self._server: ModelInterface = server

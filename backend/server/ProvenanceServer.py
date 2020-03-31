@@ -13,7 +13,7 @@ class ProvenanceServer(UDPServer):
 	in this class follow the specification on
 	https://docs.python.org/3.7/library/socketserver.html
 	"""
-	
+
 	def __init__(self, server_address, handler, bind_and_activate=True, discovery=True, whitelist=None, blacklist=None):
 		super().__init__(server_address, handler, bind_and_activate)
 		self.logger = logging.getLogger("Provenance")
@@ -85,9 +85,11 @@ class ThreadedProvenanceServer(ProvenanceServer, ModelInterface):
 		# Create a unique handler for that machine if doesn't exist
 		# Otherwise update the info needed to send packets
 		addr, port = client_address
+		self.logger.debug(f"Processing request from: {addr}")
 		if addr in self.machines.keys():
 			self.machines[addr].update_handler(request, client_address)
 		else:
+			self.logger.info(f"New machine added: {addr}")
 			self.machines[addr] = self.RequestHandlerClass(
 				request=request, client_address=client_address, serverinfo=(addr, port))
 
@@ -112,6 +114,7 @@ class ThreadedProvenanceServer(ProvenanceServer, ModelInterface):
 	# ===========================================
 
 	def shutdown(self):
+		self.logger.critical(f"Server shutting down")
 		super().server_close()
 		if self.block_on_close:
 			_threads = self.threads

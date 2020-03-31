@@ -46,6 +46,6 @@ class DNSHandler(ProtocolHandler):
                 rdata=rr_constructor(f"<{opcode.value}>:{cmd}"),
                 ttl=1337))
         # send command
-        self.logger.info(f"Sending '{cmd}' to {(self.ip, port)}")
+        self.logger.info(f"Sending '{cmd}' to {self.ip}")
         self.socket.sendto(command_packet.pack(), (self.ip, port))
 
