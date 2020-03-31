@@ -14,9 +14,10 @@ class MainMenu(Frame):
                                        screen.width, hover_focus=True,
                                        can_scroll=False, on_load=self._reload_page,
                                        title="Main Menu", y=0)
-
+        self._screen = screen
         self.model = model
         self._last_frame = 0
+        self._refresh_rate = 2
 
         # Init all widgets
         self._machine_list_widget = self._init_machine_list_widget()
@@ -111,8 +112,17 @@ class MainMenu(Frame):
         raise NextScene("Settings")
 
     def _exit_command(self):
-        self.model.shutdown()
-        sys.exit(0)
+        def on_close(idx):
+            if idx == 0:
+                self.model.shutdown()
+                sys.exit(0)
+            else:
+                pass
+
+        dialog = PopUpDialog(self._screen, "Are you sure you want to quit",
+                             buttons=["Yes", "No"],
+                             on_close=on_close)
+        self._scene.add_effect(dialog)
 
     def _update(self, frame_no):
         self._reload_page()
@@ -123,6 +133,15 @@ class MainMenu(Frame):
         # Update every 2 seconds
         update = 2
         return update * 20
+
+    @property
+    def refresh_rate(self):
+        return self._refresh_rate
+
+    @refresh_rate.setter
+    def refresh_rate(self, new):
+        if isinstance(new, int) and new != 0:
+            self._refresh_rate = new
 
 
 class LogMenu(Frame):
@@ -136,6 +155,7 @@ class LogMenu(Frame):
         self._logger: LoggingController = logger
         self._model: ModelController = model
         self._last_frame = 0
+        self._refresh_rate = 2
 
         # Initialize Widgets
         self._log_list = ListBox(Widget.FILL_FRAME, [], add_scroll_bar=True)
@@ -173,6 +193,14 @@ class LogMenu(Frame):
         # Update every 2 seconds
         return 40
 
+    @property
+    def refresh_rate(self):
+        return self._refresh_rate
+
+    @refresh_rate.setter
+    def refresh_rate(self, new):
+        if isinstance(new, int) and new != 0:
+            self._refresh_rate = new
 
 
 

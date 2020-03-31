@@ -40,6 +40,8 @@ class SettingsMenu(Frame):
         # Set default values
         self._refreshrate.value = str(2)
         self._log_level_widget.value = self._logger.log_level
+        self._discovery.value = True
+        self._display_logs.value = True
 
         # Create and Generate Layouts
         layout = Layout([1], fill_frame=True)

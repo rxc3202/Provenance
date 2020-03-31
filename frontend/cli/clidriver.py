@@ -18,8 +18,8 @@ class ProvenanceCLI(object):
         def driver(screen, scene):
             scenes = [
                 Scene([MainMenu(screen, cls.model), LogMenu(screen, cls.model, cls.logger)], -1, name="Main"),
-                Scene([MainMenu(screen, cls.model), AddMachineMenu(screen, cls.model)], -1, name="Add Host"),
-                Scene([MainMenu(screen, cls.model), DeleteMachineMenu(screen, cls.model)], -1, name="Delete Host"),
+                Scene([AddMachineMenu(screen, cls.model)], -1, name="Add Host"),
+                Scene([DeleteMachineMenu(screen, cls.model)], -1, name="Delete Host"),
                 Scene([MachineDetailsMenu(screen, cls.model)], -1, name="View Host"),
                 Scene([AddCommandMenu(screen, cls.model)], -1, name="Add Command"),
                 Scene([SettingsMenu(screen, cls.model, cls.logger)], -1, name="Settings")
