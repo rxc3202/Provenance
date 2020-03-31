@@ -9,6 +9,14 @@ class SettingsMenu(Frame):
 
     reset_data = {}
 
+    _logging_options = {
+        "Debug": 0,
+        "Info": 1,
+        "Warning": 2,
+        "Error": 3,
+        "Critical": 4
+    }
+
     def __init__(self, screen, model, logger):
         super().__init__(screen, height=screen.height // 2, width=screen.width // 2,
                          can_scroll=False, title="Settings", hover_focus=True)
@@ -21,21 +29,24 @@ class SettingsMenu(Frame):
         self._cancel_button = Button("Cancel", self._cancel)
         self._discovery = CheckBox("All hosts that connect are regarded as clients", label="Discovery", name="discovery")
         self._display_logs = CheckBox("Display logs on the main menu", label="Display Logs", name="logs")
-        self._log_level = DropdownList([("Debug", logging.DEBUG),
-                                        ("Info", logging.INFO),
-                                        ("Warning", logging.WARNING),
-                                        ("Error", logging.ERROR),
-                                        ("Critical", logging.CRITICAL)],
-                                       label="Logging Level: "
-                                       )
-        self._refreshrate = Text(label="Refresh Rate", name="refresh", on_change=self.update_refresh)
+        self._log_level_widget = DropdownList([("Debug", logging.DEBUG),
+                                               ("Info", logging.INFO),
+                                               ("Warning", logging.WARNING),
+                                               ("Error", logging.ERROR),
+                                               ("Critical", logging.CRITICAL)],
+                                              label="Logging Level: ",
+                                              name="loglevel")
+        self._refreshrate = Text(label="Refresh Rate (s):", name="refresh")
+        # Set default values
+        self._refreshrate.value = str(2)
+        self._log_level_widget.value = self._logger.log_level
 
         # Create and Generate Layouts
         layout = Layout([1], fill_frame=True)
         self.add_layout(layout)
         layout.add_widget(self._discovery)
         layout.add_widget(self._display_logs)
-        layout.add_widget(self._log_level)
+        layout.add_widget(self._log_level_widget)
         layout.add_widget(self._refreshrate)
 
         button_layout = Layout([1, 1])
@@ -63,5 +74,6 @@ class SettingsMenu(Frame):
         raise NextScene("Main")
 
     def _confirm(self):
-        self.reset()
+        self.save()
+        self._logger.log_level = self.data["loglevel"]
         raise NextScene("Main")

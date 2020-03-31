@@ -9,11 +9,12 @@ class LoggingController(object):
     ui_date_format = "%H:%M:%S"
 
     def __init__(self, logfile):
+        self._log_level = logging.INFO
         # Set up logger
         logger = logging.getLogger("Provenance")
         self._logger: logging.Logger = logger
         self._old_factory = logging.getLogRecordFactory()
-        logger.setLevel(logging.INFO)
+        logger.setLevel(self._log_level)
         formatter = logging.Formatter(fmt="%(asctime)s: [%(levelname)s] %(message)s",
                                       datefmt=self.logfile_date_format)
         self._formatter: logging.Formatter = formatter
@@ -45,8 +46,17 @@ class LoggingController(object):
         return record_factory
 
     def get_messages(self):
-        records = self._filter.get_records()
+        records = self._filter.records
         return [f"{r.creation_time.strftime(self.ui_date_format)} [{r.levelname}] {r.msg}" for r in records]
+
+    @property
+    def log_level(self):
+        return self._log_level
+
+    @log_level.setter
+    def log_level(self, level):
+        self._log_level = level
+        self._logger.setLevel(level)
 
 
 class ProvenanceLoggingFilter(logging.Filter):
@@ -71,7 +81,8 @@ class ProvenanceLoggingFilter(logging.Filter):
             self._records.append(record)
         return super().filter(record)
 
-    def get_records(self):
+    @property
+    def records(self):
         records = self._records.copy()
         self._records.clear()
         return records
