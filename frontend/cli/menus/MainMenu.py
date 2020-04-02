@@ -5,6 +5,7 @@ from frontend.util.structs import ClientInfo
 from controllers.loggingcontroller import LoggingController
 from controllers.modelcontroller import ModelController
 import sys
+from frontend.cli.menus.AddMachineMenu import AddMachineMenu
 
 
 class MainMenu(Frame):
@@ -100,6 +101,7 @@ class MainMenu(Frame):
         raise NextScene("View Host")
 
     def _add_host(self):
+        # self.add_effect(AddMachineMenu(self._screen, self.model))
         raise NextScene("Add Host")
 
     def _remove_host(self):
@@ -119,7 +121,7 @@ class MainMenu(Frame):
             else:
                 pass
 
-        dialog = PopUpDialog(self._screen, "Are you sure you want to quit",
+        dialog = PopUpDialog(self._screen, "Are you sure you want to quit?",
                              buttons=["Yes", "No"],
                              on_close=on_close)
         self._scene.add_effect(dialog)
@@ -166,6 +168,7 @@ class LogMenu(Frame):
         self.add_layout(layout)
         layout.add_widget(self._log_list)
         # layout.add_widget(self._button)
+        self._layout = layout
 
         # Fix the layouts to the Frame
         self.fix()
@@ -181,7 +184,7 @@ class LogMenu(Frame):
 
         # This is the selected value that has focus on the widget
         # see https://github.com/peterbrittain/asciimatics/blob/master/asciimatics/widgets.py#L2545
-        if len(self._log_list.options) > 0:
+        if len(self._log_list.options) > 0 and not self._log_list._has_focus:
             self._log_list.value = self._log_list.options[-1][1]
 
     def _update(self, frame_no):
