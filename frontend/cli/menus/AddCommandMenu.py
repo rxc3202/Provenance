@@ -1,5 +1,5 @@
 from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
-    Button, TextBox, Widget, MultiColumnListBox, PopupMenu, PopUpDialog, DropdownList
+    Button, TextBox, Widget, RadioButtons, PopUpDialog
 from asciimatics.exceptions import NextScene
 from ipaddress import IPv4Network, IPv4Address
 from controllers.intefaces.model import ModelInterface
@@ -7,7 +7,7 @@ from controllers.intefaces.model import ModelInterface
 
 class AddCommandMenu(Frame):
 
-    reset_data = {}
+    reset_data = {"ips": '', "cmdtype": "ps", "commands": ['']}
 
     def __init__(self, screen, model):
         super().__init__(screen, height=screen.height // 2, width=screen.width // 2,
@@ -18,11 +18,14 @@ class AddCommandMenu(Frame):
         # Initialize Widgets
         self._confirm_button = Button("Confirm", self._confirm)
         self._cancel_button = Button("Cancel", self._cancel)
-        self._ip_input = Text("IPs and/or subnet(s):", name="ips")
+        self._ip_input = Text("IPs and/or subnet(s): ", name="ips")
+        self._command_type = RadioButtons([("Powershell", "ps"), ("DOS", "cmd"), ("Bash", "bash")],
+                                          name="cmdtype",
+                                          label="Command Type: ")
         # self._or = Text("OR", disabled=True)
         # self._hostname_input = Text("Hostname(s):", name="hostnames")
         self._command_input = TextBox(Widget.FILL_FRAME,
-                                      label="Command(s):",
+                                      label="Command(s): \n(one per line)",
                                       name="commands",
                                       line_wrap=True)
 
@@ -31,6 +34,7 @@ class AddCommandMenu(Frame):
         layout = Layout([1], fill_frame=True)
         self.add_layout(layout)
         layout.add_widget(self._ip_input)
+        layout.add_widget(self._command_type)
         # layout.add_widget(self._or)
         # layout.add_widget(self._hostname_input)
         layout.add_widget(Divider())
@@ -46,21 +50,59 @@ class AddCommandMenu(Frame):
         self.fix()
 
     def reset(self):
+        self.save()
         super(AddCommandMenu, self).reset()
         self.data = self.reset_data
+        # ascimatics can be poop sometimes
+        self.data["commands"].clear()
+        self.data["commands"].append('')
 
     def _cancel(self):
         self.reset()
         raise NextScene("Main")
 
+    def _validate(self):
+        def fail(msg):
+            dialog = PopUpDialog(self._screen, msg, buttons=["OK"], theme="warning")
+            self._scene.add_effect(dialog)
+            return False
+
+        if not self.data["ips"]:
+            return fail("Please specify a list of IPs or Subnets to target")
+        else:
+            data = self.data["ips"].replace(' ', '').split(",")
+            failure = None
+            try:
+                input_ips = set(filter(lambda x: "/" not in x, data))
+                for target in input_ips:
+                    failure = target
+                    IPv4Address(target)
+            except ValueError:
+                return fail(f"{failure} is not a valid IPv4 address")
+
+            try:
+                input_subnets = filter(lambda x: "/" in x, data)
+                for target in input_subnets:
+                    failure = target
+                    IPv4Network(target)
+            except ValueError:
+                return fail(f"{failure} is not a valid IPv4 subnet. \n"
+                            f"Make sure no host bits are set (i.e 127.0.0.1/24). ")
+
+        # check if there is at least one command entered
+        if self.data["commands"].count('') == len(self.data["commands"]):
+            return fail("Please enter a command to queue.")
+
+        return True
+
     def _confirm(self):
         self.save()
-        if not self.data["commands"]:
-            pass
+        if not self._validate():
+            return
 
         if self.data["ips"]:
             # Get the IPs of the currently tracked hosts
-            data = self.data["ips"].split(",")
+            data = self.data["ips"].replace(' ', '').split(",")
             tracked_ips = set(self._model.get_hosts())
             # Get the IPs of the hosts to issue the command to
             input_ips = set(filter(lambda x: "/" not in x, data))
@@ -71,13 +113,13 @@ class AddCommandMenu(Frame):
                 subnet_ips = set([str(h) for h in subnet.hosts()])
                 valid_ips.union(subnet_ips.intersection(tracked_ips))
             for ip in valid_ips:
-                # TODO: somehow implement choosing command type elegantly
                 for command in self.data["commands"]:
                     # check for empty string
                     if command:
-                        self._model.queue_command("ps", ip, command)
-            raise NextScene("Main")
+                        self._model.queue_command(self.data["cmdtype"], ip, command)
         elif self.data["hostnames"]:
             pass
         else:
             pass
+
+        raise NextScene("Main")
