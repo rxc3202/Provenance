@@ -2,6 +2,7 @@ from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
     Button, TextBox, Widget, MultiColumnListBox, PopupMenu, PopUpDialog, DropdownList
 from asciimatics.exceptions import NextScene
 from controllers.intefaces.model import ModelInterface
+from ipaddress import IPv4Address
 
 
 class AddMachineMenu(Frame):
@@ -17,18 +18,18 @@ class AddMachineMenu(Frame):
         # Initialize Widgets
         self._confirm_button = Button("Confirm", self._confirm)
         self._cancel_button = Button("Cancel", self._cancel)
-        self._ip_input = Text("IP Address", name="ip")
-        self._hostname_input = Text("Hostname", name="hostname")
+        self._ip_input = Text("IP Address: ", name="ip")
+        self._hostname_input = Text("Hostname (optional):", name="hostname")
         self._beacon_type = DropdownList([("DNS", "DNS"), ("HTTP", "HTTP"), ("ICMP", "ICMP")],
-                                         label="Beacon Type", name="beacon")
+                                         label="Beacon Type: ", name="beacon")
 
         self.set_theme("default")
 
         # Create and Generate Layouts
         layout = Layout([1], fill_frame=True)
         self.add_layout(layout)
-        layout.add_widget(self._hostname_input)
         layout.add_widget(self._ip_input)
+        layout.add_widget(self._hostname_input)
         layout.add_widget(self._beacon_type)
         layout.add_widget(TextBox(Widget.FILL_FRAME, disabled=True))
         layout.add_widget(Divider())
@@ -48,7 +49,27 @@ class AddMachineMenu(Frame):
         self.reset()
         raise NextScene("Main")
 
+    def _validate(self):
+        def fail(msg):
+            dialog = PopUpDialog(self._screen, f"  {msg}  ", buttons=["OK"], theme="warning")
+            self._scene.add_effect(dialog)
+            return False
+
+        if not self.data["ip"]:
+            return fail("Please enter an IP address.")
+        else:
+            try:
+                IPv4Address(self.data["ip"])
+            except ValueError:
+                return fail(f"{self.data['ip']} is not a valid IPv4 address")
+
+        if not self.data["beacon"]:
+            fail("Please select the beacon of this host.")
+
     def _confirm(self):
         self.save()
+        if not self._validate():
+            return
+
         self._model.add_host(self.data["ip"], hostname=self.data["hostname"])
         raise NextScene("Main")

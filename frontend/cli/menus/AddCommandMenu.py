@@ -63,12 +63,12 @@ class AddCommandMenu(Frame):
 
     def _validate(self):
         def fail(msg):
-            dialog = PopUpDialog(self._screen, msg, buttons=["OK"], theme="warning")
+            dialog = PopUpDialog(self._screen, f"  {msg}  ", buttons=["OK"], theme="warning")
             self._scene.add_effect(dialog)
             return False
 
         if not self.data["ips"]:
-            return fail("Please specify a list of IPs or Subnets to target")
+            return fail("Please specify a list of IPs or Subnets to target.")
         else:
             data = self.data["ips"].replace(' ', '').split(",")
             failure = None
@@ -78,7 +78,7 @@ class AddCommandMenu(Frame):
                     failure = target
                     IPv4Address(target)
             except ValueError:
-                return fail(f"{failure} is not a valid IPv4 address")
+                return fail(f"{failure} is not a valid IPv4 address.")
 
             try:
                 input_subnets = filter(lambda x: "/" in x, data)
@@ -86,8 +86,7 @@ class AddCommandMenu(Frame):
                     failure = target
                     IPv4Network(target)
             except ValueError:
-                return fail(f"{failure} is not a valid IPv4 subnet. \n"
-                            f"Make sure no host bits are set (i.e 127.0.0.1/24). ")
+                return fail(f"{failure} is not valid CIDR subnet notation.")
 
         # check if there is at least one command entered
         if self.data["commands"].count('') == len(self.data["commands"]):
