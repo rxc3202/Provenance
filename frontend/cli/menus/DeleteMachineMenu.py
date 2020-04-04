@@ -2,19 +2,20 @@ from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
     Button, TextBox, Widget, MultiColumnListBox, PopupMenu, PopUpDialog, DropdownList
 from asciimatics.exceptions import NextScene
 from controllers.intefaces.model import ModelInterface
+from controllers import *
 
 
 class DeleteMachineMenu(Frame):
 
     reset_data = {"ip": "", "hostname": ""}
 
-    def __init__(self, screen, model):
+    def __init__(self, screen, model, ui: UIController):
         super().__init__(screen, height=screen.height // 5, width=screen.width // 2,
                          can_scroll=False, title="Delete Host", hover_focus=True)
 
         self.model: ModelInterface = model
-
-        self.set_theme("default")
+        self._ui: UIController = ui
+        self.set_theme(ui.theme)
 
         # Initialize Widgets
         self._confirm_button = Button("Confirm", self._confirm)
@@ -22,8 +23,6 @@ class DeleteMachineMenu(Frame):
         self._ip_input = Text("IP Address", name="ip")
         self._or = Text("OR", disabled=True)
         self._hostname_input = Text("Hostname", name="hostname")
-
-        self.set_theme("default")
 
         # Create and Generate Layouts
         layout = Layout([1], fill_frame=True)

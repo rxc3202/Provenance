@@ -2,17 +2,21 @@ from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
     Button, TextBox, Widget, MultiColumnListBox, PopupMenu, PopUpDialog, DropdownList
 from asciimatics.exceptions import NextScene
 from controllers.intefaces.model import ModelInterface
+from controllers import *
 
 
 class MachineDetailsMenu(Frame):
 
     reset_data = {"active": "", "ip": "", "hostname": "", "beacon": "", "commands": ""}
 
-    def __init__(self, screen, model):
+    def __init__(self, screen, model, ui: UIController):
         super().__init__(screen, height=screen.height * 2 // 3, width=screen.width * 2 // 3,
                          can_scroll=False, title="View Host", hover_focus=True)
 
         self._model: ModelInterface = model
+        self._ui: UIController = ui
+        self.set_theme(ui.theme)
+
 
         # Initialize Widgets
         self._confirm_button = Button("Finish", self._confirm)

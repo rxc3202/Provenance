@@ -2,6 +2,7 @@ from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
     Button, TextBox, Widget, MultiColumnListBox, PopupMenu, PopUpDialog, DropdownList
 from asciimatics.exceptions import NextScene
 from controllers.intefaces.model import ModelInterface
+from controllers import *
 from ipaddress import IPv4Address
 
 
@@ -9,11 +10,13 @@ class AddMachineMenu(Frame):
 
     reset_data = {"ip": "", "hostname": "", "beacon": ""}
 
-    def __init__(self, screen, model):
+    def __init__(self, screen, model, ui: UIController):
         super().__init__(screen, height=screen.height //2, width=screen.width //2, can_scroll=False, title="Add Host",
                          hover_focus=True)
 
         self._model: ModelInterface = model
+        self._ui: UIController = ui
+        self.set_theme(ui.theme)
 
         # Initialize Widgets
         self._confirm_button = Button("Confirm", self._confirm)
@@ -22,8 +25,6 @@ class AddMachineMenu(Frame):
         self._hostname_input = Text("Hostname (optional):", name="hostname")
         self._beacon_type = DropdownList([("DNS", "DNS"), ("HTTP", "HTTP"), ("ICMP", "ICMP")],
                                          label="Beacon Type: ", name="beacon")
-
-        self.set_theme("default")
 
         # Create and Generate Layouts
         layout = Layout([1], fill_frame=True)

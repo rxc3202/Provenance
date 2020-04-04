@@ -3,17 +3,20 @@ from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
 from asciimatics.exceptions import NextScene
 from ipaddress import IPv4Network, IPv4Address
 from controllers.intefaces.model import ModelInterface
+from controllers import UIController
 
 
 class AddCommandMenu(Frame):
 
     reset_data = {"ips": '', "cmdtype": "ps", "commands": ['']}
 
-    def __init__(self, screen, model):
+    def __init__(self, screen, model, ui: UIController):
         super().__init__(screen, height=screen.height // 2, width=screen.width // 2,
                          can_scroll=False, title="Add Command", hover_focus=True)
 
         self._model: ModelInterface = model
+        self._ui: UIController = ui
+        self.set_theme(ui.theme)
 
         # Initialize Widgets
         self._confirm_button = Button("Confirm", self._confirm)

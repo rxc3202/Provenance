@@ -1,5 +1,5 @@
 from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
-    Button, TextBox, Widget, CheckBox, DropdownList
+    Button, TextBox, Widget, CheckBox, DropdownList, THEMES as asciimatics_themes
 from asciimatics.exceptions import NextScene
 import logging
 from controllers import *
@@ -17,18 +17,26 @@ class SettingsMenu(Frame):
         "Critical": 4
     }
 
-    def __init__(self, screen, model, logger):
+    def __init__(self, screen, model: ModelController, logger: LoggingController, ui: UIController):
         super().__init__(screen, height=screen.height // 2, width=screen.width // 2,
                          can_scroll=False, title="Settings", hover_focus=True)
+
+        # Controllers that access different aspects of provenance
         self._logger: LoggingController = logger
         self._model: ModelController = model
-        self.set_theme("default")
+        self._ui: UIController = ui
+
+        self.set_theme(ui.theme)
 
         # Initialize Widgets
         self._confirm_button = Button("Confirm", self._confirm)
         self._cancel_button = Button("Cancel", self._cancel)
-        self._discovery = CheckBox("All hosts that connect are regarded as clients", label="Discovery", name="discovery")
-        self._display_logs = CheckBox("Display logs on the main menu", label="Display Logs", name="logs")
+        self._discovery = CheckBox("All hosts that connect are regarded as clients",
+                                   label="Discovery: ",
+                                   name="discovery")
+        self._display_logs = CheckBox("Display logs on the main menu",
+                                      label="Display Logs: ",
+                                      name="logs")
         self._log_level_widget = DropdownList([("Debug", logging.DEBUG),
                                                ("Info", logging.INFO),
                                                ("Warning", logging.WARNING),
@@ -36,20 +44,25 @@ class SettingsMenu(Frame):
                                                ("Critical", logging.CRITICAL)],
                                               label="Logging Level: ",
                                               name="loglevel")
+        self._theme_widget = DropdownList([(t, t) for t in asciimatics_themes.keys()],
+                                          label="Logging Level: ",
+                                          name="loglevel")
         self._refreshrate = Text(label="Refresh Rate (s):", name="refresh")
         # Set default values
         self._refreshrate.value = str(2)
         self._log_level_widget.value = self._logger.log_level
         self._discovery.value = True
         self._display_logs.value = True
+        self._theme_widget.value = ui.theme
 
         # Create and Generate Layouts
         layout = Layout([1], fill_frame=True)
         self.add_layout(layout)
         layout.add_widget(self._discovery)
         layout.add_widget(self._display_logs)
-        layout.add_widget(self._log_level_widget)
         layout.add_widget(self._refreshrate)
+        layout.add_widget(self._log_level_widget)
+        layout.add_widget(self._theme_widget)
 
         button_layout = Layout([1, 1])
         self.add_layout(button_layout)

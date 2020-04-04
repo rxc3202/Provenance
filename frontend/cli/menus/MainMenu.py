@@ -2,23 +2,23 @@ from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
     Button, TextBox, Widget, MultiColumnListBox, PopupMenu, PopUpDialog, DropdownList
 from asciimatics.exceptions import NextScene
 from frontend.util.structs import ClientInfo
-from controllers.loggingcontroller import LoggingController
-from controllers.modelcontroller import ModelController
+from controllers import *
 import sys
-from frontend.cli.menus.AddMachineMenu import AddMachineMenu
 
 
 class MainMenu(Frame):
 
-    def __init__(self, screen, model):
+    def __init__(self, screen, model: ModelController, ui: UIController):
         super(MainMenu, self).__init__(screen, screen.height * 3 // 4,
                                        screen.width, hover_focus=True,
                                        can_scroll=False, on_load=self._reload_page,
                                        title="Main Menu", y=0)
+        self.model: ModelController = model
+        self._ui: UIController = ui
         self._screen = screen
-        self.model = model
         self._last_frame = 0
         self._refresh_rate = 2
+        self.set_theme(ui.theme)
 
         # Init all widgets
         self._machine_list_widget = self._init_machine_list_widget()
@@ -101,7 +101,6 @@ class MainMenu(Frame):
         raise NextScene("View Host")
 
     def _add_host(self):
-        # self.add_effect(AddMachineMenu(self._screen, self.model))
         raise NextScene("Add Host")
 
     def _remove_host(self):
@@ -150,14 +149,16 @@ class LogMenu(Frame):
 
     MAX_LOG_COUNT = 50
 
-    def __init__(self, screen, model, logger):
+    def __init__(self, screen, model: ModelController, logger: LoggingController, ui: UIController):
         super(LogMenu, self).__init__(screen, screen.height//4, screen.width, hover_focus=True,
                                       can_scroll=False, on_load=None,
                                       title="Logs", y=screen.height * 3 // 4)
         self._logger: LoggingController = logger
         self._model: ModelController = model
+        self._ui: UIController = ui
         self._last_frame = 0
         self._refresh_rate = 2
+        self.set_theme(ui.theme)
 
         # Initialize Widgets
         self._log_list = ListBox(Widget.FILL_FRAME, [], add_scroll_bar=True)
