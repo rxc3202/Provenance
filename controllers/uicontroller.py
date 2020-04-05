@@ -10,11 +10,12 @@ class UIController(object):
 
     @property
     def refresh_rate(self):
-        return self.refresh_rate
+        return self._refresh_rate
 
     @refresh_rate.setter
     def refresh_rate(self, new):
-        self.refresh_rate = new
+        if isinstance(new, int) and new != 0:
+            self._refresh_rate = new
 
     @property
     def theme(self):

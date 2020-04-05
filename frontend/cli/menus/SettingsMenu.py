@@ -92,6 +92,7 @@ class SettingsMenu(Frame):
         self.save()
         self._logger.log_level = self.data["loglevel"]
         self._ui.theme = self.data["theme"]
+        self._ui.refresh_rate = int(self.data["refresh"])
         raise NextScene("Main")
 
 

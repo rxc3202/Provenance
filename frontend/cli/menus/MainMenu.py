@@ -17,7 +17,6 @@ class MainMenu(Frame):
         self._ui: UIController = ui
         self._screen = screen
         self._last_frame = 0
-        self._refresh_rate = 2
         self._theme = None
         self.set_theme(ui.theme)
 
@@ -146,17 +145,7 @@ class MainMenu(Frame):
     @property
     def frame_update_count(self):
         # Update every 2 seconds
-        update = 2
-        return update * 20
-
-    @property
-    def refresh_rate(self):
-        return self._refresh_rate
-
-    @refresh_rate.setter
-    def refresh_rate(self, new):
-        if isinstance(new, int) and new != 0:
-            self._refresh_rate = new
+        return self._ui.refresh_rate * 20
 
 
 class LogMenu(Frame):
@@ -171,7 +160,6 @@ class LogMenu(Frame):
         self._model: ModelController = model
         self._ui: UIController = ui
         self._last_frame = 0
-        self._refresh_rate = 2
         self._theme = None
         self.set_theme(ui.theme)
 
@@ -210,16 +198,7 @@ class LogMenu(Frame):
     @property
     def frame_update_count(self):
         # Update every 2 seconds
-        return 40
-
-    @property
-    def refresh_rate(self):
-        return self._refresh_rate
-
-    @refresh_rate.setter
-    def refresh_rate(self, new):
-        if isinstance(new, int) and new != 0:
-            self._refresh_rate = new
+        return self._ui.refresh_rate * 20
 
     def _update(self, frame_no):
         if self._ui.theme != self._theme:
