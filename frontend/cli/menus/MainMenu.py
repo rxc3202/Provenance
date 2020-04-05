@@ -9,10 +9,15 @@ import sys
 class MainMenu(Frame):
 
     def __init__(self, screen, model: ModelController, ui: UIController):
-        super(MainMenu, self).__init__(screen, screen.height * 3 // 4,
-                                       screen.width, hover_focus=True,
-                                       can_scroll=False, on_load=self._reload_page,
-                                       title="Main Menu", y=0)
+        super(MainMenu, self).__init__(screen,
+                                       height=screen.height * 3 // 4,
+                                       width=screen.width * 3//4,
+                                       hover_focus=True,
+                                       can_scroll=False,
+                                       on_load=self._reload_page,
+                                       title="Main Menu",
+                                       x=0,
+                                       y=0)
         self.model: ModelController = model
         self._ui: UIController = ui
         self._screen = screen
@@ -148,14 +153,93 @@ class MainMenu(Frame):
         return self._ui.refresh_rate * 20
 
 
+class FilterMenu(Frame):
+
+    def __init__(self, screen, model: ModelController, ui: UIController):
+        super(FilterMenu, self).__init__(screen,
+                                         height=screen.height * 3//4,
+                                         width=screen.width * 1//4 + 1,
+                                         hover_focus=True,
+                                         can_scroll=False,
+                                         on_load=None,
+                                         title="Filter",
+                                         x=screen.width * 3//4,
+                                         y=0)
+        self._model: ModelController = model
+        self._ui: UIController = ui
+
+        # Initialize Widgets
+        self._clear_button = Button("Clear Filters", on_click=self._clear, add_box=False)
+        self._beacon_header = Text(disabled=True)
+        self._beacon_header.value = "Beacon Type: "
+        self._beacon_type = DropdownList([("All", "ALL"), ("DNS", "DNS"), ("HTTP", "HTTP"), ("ICMP", "ICMP")], name="beacon")
+
+        self._active_header = Text(disabled=True)
+        self._active_header.value = "Last Active (in minutes): "
+        self._active_field = Text()
+
+        self._ip_header = Text(disabled=True)
+        self._ip_header.value = "IPs and/or subnet(s): "
+        self._ip_input = Text(name="ips")
+        self._filler = TextBox(Widget.FILL_FRAME, disabled=True)
+        # Default values
+        self._active_field.value = "10"
+
+        # Add Widgets to Frame
+        layout = Layout([1], fill_frame=True)
+        self.add_layout(layout)
+        layout.add_widget(self._beacon_header)
+        layout.add_widget(self._beacon_type)
+        layout.add_widget(self._active_header)
+        layout.add_widget(self._active_field)
+        layout.add_widget(self._ip_header)
+        layout.add_widget(self._ip_input)
+
+        layout.add_widget(self._filler)
+        layout.add_widget(Divider())
+
+        buttons = Layout([1])
+        self.add_layout(buttons)
+        buttons.add_widget(self._clear_button)
+
+        # Fix all widgets to Frame
+        self.fix()
+
+    def _clear(self):
+        pass
+
+    # ====================================
+    # Overridden functions
+    # ====================================
+
+    @property
+    def frame_update_count(self):
+        # Update every 2 seconds
+        return self._ui.refresh_rate * 20
+
+    def _update(self, frame_no):
+        if self._ui.theme != self._theme:
+            self.set_theme(self._ui.theme)
+        super()._update(frame_no)
+
+    def set_theme(self, theme):
+        super().set_theme(theme)
+        self._theme = theme
+
+
 class LogMenu(Frame):
 
     MAX_LOG_COUNT = 50
 
     def __init__(self, screen, model: ModelController, logger: LoggingController, ui: UIController):
-        super(LogMenu, self).__init__(screen, screen.height//4, screen.width, hover_focus=True,
-                                      can_scroll=False, on_load=None,
-                                      title="Logs", y=screen.height * 3 // 4)
+        super(LogMenu, self).__init__(screen,
+                                      height=screen.height//4,
+                                      width=screen.width,
+                                      hover_focus=True,
+                                      can_scroll=False,
+                                      on_load=None,
+                                      title="Logs",
+                                      y=screen.height * 3 // 4)
         self._logger: LoggingController = logger
         self._model: ModelController = model
         self._ui: UIController = ui

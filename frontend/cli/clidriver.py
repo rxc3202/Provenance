@@ -1,5 +1,5 @@
 from frontend.cli.menus import *
-from frontend.cli.menus.MainMenu import LogMenu
+from frontend.cli.menus.MainMenu import *
 from asciimatics.scene import Scene
 from asciimatics.screen import Screen
 from asciimatics.exceptions import ResizeScreenError
@@ -22,7 +22,11 @@ class ProvenanceCLI(object):
 
         def driver(screen, scene):
             scenes = [
-                Scene([MainMenu(screen, cls.model, cls.ui), LogMenu(screen, cls.model, cls.logger, cls.ui)], -1, name="Main"),
+                Scene([
+                    MainMenu(screen, cls.model, cls.ui),
+                    LogMenu(screen, cls.model, cls.logger, cls.ui),
+                    FilterMenu(screen, cls.model, cls.ui)
+                ], -1, name="Main"),
                 Scene([AddMachineMenu(screen, cls.model, cls.ui)], -1, name="Add Host"),
                 Scene([DeleteMachineMenu(screen, cls.model, cls.ui)], -1, name="Delete Host"),
                 Scene([MachineDetailsMenu(screen, cls.model, cls.ui)], -1, name="View Host"),
