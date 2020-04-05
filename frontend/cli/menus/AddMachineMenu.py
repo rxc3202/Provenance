@@ -16,6 +16,7 @@ class AddMachineMenu(Frame):
 
         self._model: ModelInterface = model
         self._ui: UIController = ui
+        self._theme = None
         self.set_theme(ui.theme)
 
         # Initialize Widgets
@@ -74,3 +75,16 @@ class AddMachineMenu(Frame):
 
         self._model.add_host(self.data["ip"], hostname=self.data["hostname"])
         raise NextScene("Main")
+
+    # ====================================
+    # Overridden functions
+    # ====================================
+
+    def _update(self, frame_no):
+        if self._ui.theme != self._theme:
+            self.set_theme(self._ui.theme)
+        super()._update(frame_no)
+
+    def set_theme(self, theme):
+        super().set_theme(theme)
+        self._theme = theme

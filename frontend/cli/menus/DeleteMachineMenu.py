@@ -15,6 +15,7 @@ class DeleteMachineMenu(Frame):
 
         self.model: ModelInterface = model
         self._ui: UIController = ui
+        self._theme = None
         self.set_theme(ui.theme)
 
         # Initialize Widgets
@@ -54,3 +55,16 @@ class DeleteMachineMenu(Frame):
             raise NextScene("Main")
         else:
             pass
+
+    # ====================================
+    # Overridden functions
+    # ====================================
+
+    def _update(self, frame_no):
+        if self._ui.theme != self._theme:
+            self.set_theme(self._ui.theme)
+        super()._update(frame_no)
+
+    def set_theme(self, theme):
+        super().set_theme(theme)
+        self._theme = theme

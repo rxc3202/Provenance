@@ -18,6 +18,7 @@ class MainMenu(Frame):
         self._screen = screen
         self._last_frame = 0
         self._refresh_rate = 2
+        self._theme = None
         self.set_theme(ui.theme)
 
         # Init all widgets
@@ -26,7 +27,7 @@ class MainMenu(Frame):
         self._rem_host_button = Button("Remove Host", self._remove_host)
         self._add_cmd_button = Button("Add CMD", self._add_command)
         self._rem_cmd_button = Button("Settings", self._options_command)
-        self._refresh_button = Button("Refresh", self._reload_page)
+        self._refresh_button = Button("Refresh", self._refresh)
         self._exit_button = Button("Exit", self._exit_command)
 
         # Generation
@@ -83,6 +84,9 @@ class MainMenu(Frame):
         self._machine_list_widget.options = [(x, i) for i, x in enumerate(machines)]
 
     # Menu Actions Methods
+    def _refresh(self):
+        pass
+
     def _view_host(self):
         self.save()
         # This saves the row that was clicked
@@ -125,9 +129,19 @@ class MainMenu(Frame):
                              on_close=on_close)
         self._scene.add_effect(dialog)
 
+    # ====================================
+    # Overridden functions
+    # ====================================
+
     def _update(self, frame_no):
+        if self._ui.theme != self._theme:
+            self.set_theme(self._ui.theme)
         self._reload_page()
         super()._update(frame_no)
+
+    def set_theme(self, theme):
+        super().set_theme(theme)
+        self._theme = theme
 
     @property
     def frame_update_count(self):
@@ -158,6 +172,7 @@ class LogMenu(Frame):
         self._ui: UIController = ui
         self._last_frame = 0
         self._refresh_rate = 2
+        self._theme = None
         self.set_theme(ui.theme)
 
         # Initialize Widgets
@@ -188,9 +203,9 @@ class LogMenu(Frame):
         if len(self._log_list.options) > 0 and not self._log_list._has_focus:
             self._log_list.value = self._log_list.options[-1][1]
 
-    def _update(self, frame_no):
-        self._reload_frame()
-        super()._update(frame_no)
+    # ====================================
+    # Overridden functions
+    # ====================================
 
     @property
     def frame_update_count(self):
@@ -206,5 +221,12 @@ class LogMenu(Frame):
         if isinstance(new, int) and new != 0:
             self._refresh_rate = new
 
+    def _update(self, frame_no):
+        if self._ui.theme != self._theme:
+            self.set_theme(self._ui.theme)
+        self._reload_frame()
+        super()._update(frame_no)
 
-
+    def set_theme(self, theme):
+        super().set_theme(theme)
+        self._theme = theme

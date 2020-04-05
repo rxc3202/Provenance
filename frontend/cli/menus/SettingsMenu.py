@@ -25,7 +25,7 @@ class SettingsMenu(Frame):
         self._logger: LoggingController = logger
         self._model: ModelController = model
         self._ui: UIController = ui
-
+        self._theme = None
         self.set_theme(ui.theme)
 
         # Initialize Widgets
@@ -45,8 +45,8 @@ class SettingsMenu(Frame):
                                               label="Logging Level: ",
                                               name="loglevel")
         self._theme_widget = DropdownList([(t, t) for t in asciimatics_themes.keys()],
-                                          label="Logging Level: ",
-                                          name="loglevel")
+                                          label="Theme: ",
+                                          name="theme")
         self._refreshrate = Text(label="Refresh Rate (s):", name="refresh")
         # Set default values
         self._refreshrate.value = str(2)
@@ -91,4 +91,19 @@ class SettingsMenu(Frame):
     def _confirm(self):
         self.save()
         self._logger.log_level = self.data["loglevel"]
+        self._ui.theme = self.data["theme"]
         raise NextScene("Main")
+
+
+    # ====================================
+    # Overridden functions
+    # ====================================
+
+    def _update(self, frame_no):
+        if self._ui.theme != self._theme:
+            self.set_theme(self._ui.theme)
+        super()._update(frame_no)
+
+    def set_theme(self, theme):
+        super().set_theme(theme)
+        self._theme = theme

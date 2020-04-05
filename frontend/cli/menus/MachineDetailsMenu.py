@@ -15,6 +15,7 @@ class MachineDetailsMenu(Frame):
 
         self._model: ModelInterface = model
         self._ui: UIController = ui
+        self._theme = None
         self.set_theme(ui.theme)
 
 
@@ -79,3 +80,16 @@ class MachineDetailsMenu(Frame):
     def _cancel(self):
         self._model.reset_current()
         raise NextScene("Main")
+
+    # ====================================
+    # Overridden functions
+    # ====================================
+
+    def _update(self, frame_no):
+        if self._ui.theme != self._theme:
+            self.set_theme(self._ui.theme)
+        super()._update(frame_no)
+
+    def set_theme(self, theme):
+        super().set_theme(theme)
+        self._theme = theme
