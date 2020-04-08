@@ -193,6 +193,8 @@ class ThreadedProvenanceServer(ProvenanceServer, ModelInterface):
 		cwd = os.getcwd()
 		filename = f"Provenance_{date}.bak"
 		path = os.path.join(cwd, self._backup_dir, filename)
+		if not os.path.exists(os.path.dirname(path)):
+			os.makedirs(os.path.dirname(path))
 		try:
 			with open(path, "w") as file:
 				json.dump(encodings, file)
