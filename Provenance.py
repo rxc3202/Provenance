@@ -10,7 +10,7 @@ import logging
 from frontend.cli.clidriver import ProvenanceCLI
 from backend.server.ProvenanceClient import ProvenanceClientHandler
 from backend.server.ProvenanceServer import ProvenanceServer, ThreadedProvenanceServer
-import backend.util.arguments as argopts
+import util.arguments as argopts
 from controllers import *
 
 

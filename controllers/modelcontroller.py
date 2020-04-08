@@ -1,7 +1,5 @@
-from frontend.util.structs import ClientInfo
+from util.structs import ClientInfo
 from controllers.intefaces.model import ModelInterface
-import pprint
-import json
 
 
 class ModelController(object):

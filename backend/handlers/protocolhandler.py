@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 import logging
-from frontend.util.structs import Command
+from util.structs import Command
 
 class Commands(Enum):
     """ The types of commands that can be on the victim

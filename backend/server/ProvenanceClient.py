@@ -1,10 +1,9 @@
 from socketserver import BaseRequestHandler
 import backend.handlers as handlers
 from datetime import datetime
-from frontend.util.structs import CommandType, Command
+from util.structs import CommandType, Command
 from collections import deque
 from typing import Union
-import json
 
 
 class ProvenanceClientHandler(BaseRequestHandler):

@@ -67,6 +67,7 @@ class AddMachineMenu(Frame):
 
         if not self.data["beacon"]:
             fail("Please select the beacon of this host.")
+        return True
 
     def _confirm(self):
         self.save()

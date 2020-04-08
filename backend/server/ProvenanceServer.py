@@ -1,8 +1,8 @@
 import logging
 import threading
 from socketserver import UDPServer
-from backend.util.arguments import parse_ips, ip_in_list
-from frontend.util.structs import ClientInfo
+from util import parse_ips, ip_in_list
+from util.structs import ClientInfo
 from controllers.intefaces.model import ModelInterface
 import json
 from datetime import datetime
@@ -171,6 +171,10 @@ class ThreadedProvenanceServer(ProvenanceServer, ModelInterface):
 		return machine.get_hostname()
 
 	def backup(self, fmt="%Y-%m-%d_%H~%M~%S", failover=True):
+		# If there are no machines being tracked we don't care
+		if self.machines.keys():
+			return
+
 		def save_failure(d):
 			if not failover:
 				self.logger.critical(f"Backup failover is off. Backup not created.")

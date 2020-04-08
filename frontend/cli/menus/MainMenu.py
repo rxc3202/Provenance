@@ -1,7 +1,7 @@
 from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
-    Button, TextBox, Widget, MultiColumnListBox, PopupMenu, PopUpDialog, DropdownList
+    Button, TextBox, Widget, MultiColumnListBox, PopUpDialog, DropdownList
 from asciimatics.exceptions import NextScene
-from frontend.util.structs import ClientInfo
+from util.structs import ClientInfo
 from controllers import *
 import sys
 
