@@ -38,7 +38,7 @@ def main():
 	# Initialize Controllers for model-ui interactions
 	ui_controller = UIController()
 	model_controller = ModelController(server)
-	logger_controller = LoggingController("logs/provenance.log")
+	logger_controller = LoggingController(logfile="logs/provenance.log")
 	logger = logging.getLogger("Provenance")
 	logger.critical(f"Server starting on {socket[0]}:{socket[1]}.")
 

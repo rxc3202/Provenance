@@ -1,6 +1,6 @@
 from datetime import datetime
 import logging
-import io
+import os
 
 
 class LoggingController(object):
@@ -23,6 +23,10 @@ class LoggingController(object):
         logging.setLogRecordFactory(factory)
 
         # Generate File handler to log output to file
+        cwd = os.getcwd()
+        path = os.path.join(cwd, logfile)
+        if not os.path.exists(os.path.dirname(path)):
+            os.makedirs(os.path.dirname(path))
         file_handler = logging.FileHandler(logfile)
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
