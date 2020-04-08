@@ -103,4 +103,12 @@ class ModelInterface(ABC):
     def get_machine_info(self, ip):
         raise NotImplementedError("get_machine_info() must be implemented in concrete subclass")
 
+    @abstractmethod
+    def backup(self):
+        """
+        Backup the machine to a file using JSON-like format
+        :return: None
+        """
+        raise NotImplementedError("backup() must be implemented in concrete subclass")
+
 

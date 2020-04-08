@@ -1,5 +1,7 @@
 from frontend.util.structs import ClientInfo
 from controllers.intefaces.model import ModelInterface
+import pprint
+import json
 
 
 class ModelController(object):
@@ -25,6 +27,9 @@ class ModelController(object):
     # ===========================================
     # Global Server Functions
     # ===========================================
+
+    def backup(self):
+        self._server.backup()
 
     def shutdown(self):
         self._server.shutdown()
@@ -106,10 +111,11 @@ class ModelController(object):
         """
         info = self._server.get_machine_info(ip)
         if info.active:
-            return info.active
+            return f"{info.active}m"
         return "N/A"
 
     def get_machine_info(self, ip):
-        return ClientInfo(*self._server.get_machine_info(ip))
+        info = self._server.get_machine_info(ip)
+        return ClientInfo(info.beacon, info.hostname, info.ip, f"{info.active}m", info.commands)
 
 

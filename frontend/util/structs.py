@@ -45,6 +45,10 @@ accessing them using indices
 
 
 class Command(object):
+
+    __slots__ = ["_type", "_command", "_uid"]
+    _keys = [x.replace('_', '') for x in __slots__]
+
     def __init__(self, cmd_type, command, uid=None):
         self._type: CommandType = cmd_type
         self._command: str = command
@@ -82,14 +86,31 @@ class Command(object):
         :param command: the Command to encode
         :return: a python dict used for JSON encoding
         """
-        return {"type": command.type, "command": command.command, "uid": command.uid}
+        return {
+            "type": CommandType.encode(command.type),
+            "command": command.command,
+            "uid": command.uid
+        }
 
     @staticmethod
     def decode(json_command):
+        """
+        Decodes a Command object from JSON format (as a string) and reproduces
+        the original Command instance
+        :param json_command: a string with the keys defined in Command._keys
+        :return: a Command object
+        """
         if isinstance(json_command, str):
-            pass
+            d: dict = json.loads(json_command)
+            # check if there are all expected keys to create a new command
+            if set(d.keys()) == set(Command._keys):
+                return Command(d["type"], d["command"], d["uid"])
+            return None
         elif isinstance(json_command, dict):
-            pass
+            return Command(json_command["type"],
+                           json_command["command"],
+                           json_command["uid"]
+                           )
         else:
             return None
 

@@ -89,6 +89,7 @@ class MainMenu(Frame):
 
     # Menu Actions Methods
     def _refresh(self):
+        self.model.backup()
         pass
 
     def _view_host(self):

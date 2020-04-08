@@ -4,6 +4,9 @@ from socketserver import UDPServer
 from backend.util.arguments import parse_ips, ip_in_list
 from frontend.util.structs import ClientInfo
 from controllers.intefaces.model import ModelInterface
+import json
+from datetime import datetime
+import os.path
 
 
 class ProvenanceServer(UDPServer):
@@ -74,11 +77,13 @@ class ThreadedProvenanceServer(ProvenanceServer, ModelInterface):
 	# used by server_close() to wait for all threads completion.
 	threads = []
 
-	def __init__(self, server_address, handler, bind_and_activate=True, discovery=True, whitelist=None, blacklist=None):
+	def __init__(self, server_address, handler, bind_and_activate=True, discovery=True, whitelist=None, blacklist=None,
+				 backup_dir="backups"):
 		super().__init__(server_address, handler, bind_and_activate, discovery, whitelist, blacklist)
 		self.machines = {}
 		self.whitelist = []
 		self.blacklist = []
+		self._backup_dir = backup_dir
 
 	# Server Handling Methods
 	def process_request(self, request, client_address):
@@ -164,3 +169,31 @@ class ThreadedProvenanceServer(ProvenanceServer, ModelInterface):
 	def get_hostname(self, ip):
 		machine = self.machines[ip]
 		return machine.get_hostname()
+
+	def backup(self, fmt="%Y-%m-%d_%H~%M~%S", failover=True):
+		def save_failure(d):
+			if not failover:
+				self.logger.critical(f"Backup failover is off. Backup not created.")
+				return
+
+			p = os.path.join(d, f"provenance_backup.bak")
+			with open(p, "w") as out:
+				json.dump(encodings, out)
+			self.logger.critical(f"Creating safe backup file without errors: {p}")
+
+		encodings = []
+		for m in self.machines.values():
+			encoding = m.encode()
+			encodings.append(encoding)
+		date = datetime.now().strftime(fmt)
+		cwd = os.getcwd()
+		filename = f"Provenance_{date}.bak"
+		path = os.path.join(cwd, self._backup_dir, filename)
+		try:
+			with open(path, "w") as file:
+				json.dump(encodings, file)
+			self.logger.critical(f"Backup saved to: {path}")
+		except OSError as e:
+			self.logger.error("Couldn't create backup file due OSError")
+			self.logger.debug("Windows don't allow certain characters in filenames.")
+			save_failure(cwd)

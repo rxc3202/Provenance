@@ -47,8 +47,9 @@ def main():
 		ProvenanceCLI.model = model_controller
 		ProvenanceCLI.logger = logger_controller
 		ProvenanceCLI.ui = ui_controller
-		frontend_thread = threading.Thread(target=ProvenanceCLI.run)
-		frontend_thread.start()
+		ProvenanceCLI.run()
+		# frontend_thread = threading.Thread(target=ProvenanceCLI.run)
+		# frontend_thread.start()
 
 
 if __name__ == '__main__':

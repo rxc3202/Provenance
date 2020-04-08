@@ -44,7 +44,7 @@ class ProvenanceClientHandler(BaseRequestHandler):
             "hostname": self._hostname,
             "ip": self.get_ip,
             "active": self.get_last_active,
-            "commands": [dict(c._asdict()) for c in self._queued_commands]
+            "commands": [Command.encode(c) for c in self._queued_commands]
         }
 
     # Application-Based Methods
