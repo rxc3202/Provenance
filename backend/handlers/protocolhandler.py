@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 import logging
-
+from frontend.util.structs import Command
 
 class Commands(Enum):
     """ The types of commands that can be on the victim
@@ -35,13 +35,14 @@ class ProtocolHandler(ABC):
         return self.socket
 
     @abstractmethod
-    def handle_request(self, raw_request, port, cmd):
+    def handle_request(self, raw_request, port: int, cmd: Command):
         """
         A required method that will take the raw request received by
         :module: socketserver.UDPServer, parse it and send back the response
         to the given port
         :param raw_request: the request found in :module: socketserver.UDPServer
         :param port: the port to send the response to
+        :param cmd: the command to send
         :return: None
         """
         raise NotImplementedError("handle_request() not implemented in subclass.")

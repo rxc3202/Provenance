@@ -3,6 +3,8 @@ import backend.handlers as handlers
 from datetime import datetime
 from frontend.util.structs import CommandType, Command
 from collections import deque
+from typing import Union
+import json
 
 
 class ProvenanceClientHandler(BaseRequestHandler):
@@ -22,7 +24,7 @@ class ProvenanceClientHandler(BaseRequestHandler):
         self._queued_commands = deque()
         self._sent_commands = []
         self._command_count = 0
-        self._last_active = None
+        self._last_active: Union[datetime, None] = None
         self._client_count += 1
 
         # The model that tracks each controlled machine
@@ -35,6 +37,15 @@ class ProvenanceClientHandler(BaseRequestHandler):
 
     def __repr__(self):
         return f"ProvenanceClient{{{self.server[1]}, {self._hostname}}}"
+
+    def encode(self):
+        return {
+            "beacon": self.beacon_type,
+            "hostname": self._hostname,
+            "ip": self.get_ip,
+            "active": self.get_last_active,
+            "commands": [dict(c._asdict()) for c in self._queued_commands]
+        }
 
     # Application-Based Methods
 
@@ -68,9 +79,9 @@ class ProvenanceClientHandler(BaseRequestHandler):
         _, port = self.client_address
         self._last_active = datetime.now()
         if self._queued_commands:
-            cmd_to_be_sent = self._queued_commands.popleft()[:2]
+            cmd_to_be_sent = self._queued_commands.popleft()
         else:
-            cmd_to_be_sent = (CommandType.NOP, "NONE")
+            cmd_to_be_sent = Command(CommandType.NOP, "NONE")
         self._protocol_handler.handle_request(self.request, port, cmd_to_be_sent)
         self._sent_commands.append((self._command_count, cmd_to_be_sent))
 
@@ -116,11 +127,13 @@ class ProvenanceClientHandler(BaseRequestHandler):
 
     @property
     def get_last_active(self):
+        # TODO: change to be datetime object not string
+        # TODO: and convert encode
         if not self._last_active:
             return None
         else:
             delta = datetime.now() - self._last_active
-            return f"{delta.seconds//60}m"
+            return delta.seconds//60
 
     @property
     def get_command_count(self):
