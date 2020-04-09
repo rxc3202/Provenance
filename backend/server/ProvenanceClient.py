@@ -33,10 +33,11 @@ class ProvenanceClientHandler(BaseRequestHandler):
         # The model that tracks each controlled machine
         # TODO: somehow dynamically assess the protocol (maybe set up multiple ports)
         self._protocol_handler = None
-        if request:
+        if request or handler:
             handler_type = self.beacon_types[handler]
+            # TODO: fix this jank
             self._protocol_handler = handler_type(
-                ip=client_address[0], socket=request[1]
+                ip=client_address[0], socket=request[1] if request else None
             )
 
         ProvenanceClientHandler._client_count += 1

@@ -1,7 +1,7 @@
 import logging
 import threading
 from socketserver import UDPServer
-from util import parse_ips, ip_in_list
+from util import parse_whitelist, get_whitelist, ip_in_list
 from util.structs import ClientInfo
 from controllers.intefaces.model import ModelInterface
 import json
@@ -27,10 +27,17 @@ class ProvenanceServer(UDPServer):
 		self.blacklist = []
 		self.discovery = discovery
 		self._backup_dir = backup_dir
-		if whitelist:
-			self.whitelist = parse_ips(whitelist)
-		if blacklist:
-			self.blacklist = parse_ips(blacklist)
+
+		# Get the list of IPs we're supposed to interact with
+		if not discovery:
+			# via the whitelist argument
+			if whitelist:
+				hosts = parse_whitelist(whitelist)
+			else:
+				# or manually by command line (eww)
+				hosts = get_whitelist()
+			for h in hosts:
+				self.add_host(ip=h[0], hostname=h[1], handler=h[2])
 
 		if restore:
 			self.logger.critical(f"Restoring backup from {restore[0]}")
@@ -132,10 +139,11 @@ class ProvenanceServer(UDPServer):
 	def get_hosts(self):
 		return self.machines.keys()
 
-	def add_host(self, ip, **kwargs):
-		new_handler = self.RequestHandlerClass(request=None,
-											   client_address=(ip, None),
-											   serverinfo=self.server_address, **kwargs)
+	def add_host(self, ip, hostname=None, handler=None):
+		new_handler = self.RequestHandlerClass(
+			request=None, client_address=(ip, None), serverinfo=self.server_address,
+			hostname=hostname, handler=handler or "DNS"
+		)
 		if ip not in self.machines.keys():
 			self.machines[ip] = new_handler
 			return True

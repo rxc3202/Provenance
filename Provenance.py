@@ -31,6 +31,7 @@ def main():
 				server_address=socket,
 				handler=ProvenanceClientHandler,
 				discovery=args.discovery,
+				whitelist=args.whitelist,
 				backup_dir="backups",
 				restore=args.restore
 			)

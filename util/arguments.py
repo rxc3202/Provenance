@@ -35,14 +35,20 @@ def parse_arguments():
                         help="""Restore tracked machines and commands from a file""")
 
     parser.add_argument("--blacklist",
+                        dest="blacklist",
                         nargs=1,
                         help="Don't interact with these IPs")
 
+    # TODO: add modification to format -> OS:IP:HOSTNAME:{DNS|ICMP|HTTP}
     parser.add_argument("--whitelist",
-                        nargs=1,
-                        type=argparse.FileType('r'),
+                        dest="whitelist",
+                        nargs='?',
+                        default=None,
+                        const=None,
+                        type=str,
                         help="""Only interact with these IPs. One IP per line of text file.
-                        Blacklisted IPs are invalid even if they are on the whitelist""")
+                        in the format IP:HOSTNAME:{DNS|ICMP|HTTP}
+                        Blacklisted IPs are invalid even if they are on the whitelist. """)
     return parser.parse_args()
 
 
@@ -50,9 +56,27 @@ def verbosity(level):
     return (3 - level) * 10
 
 
-def parse_ips(filename):
+def parse_whitelist(filename):
+    hosts = []
     with open(filename, 'r') as file:
-        return [line.strip() for line in file]
+        for line in file:
+            line = line.strip().split(':')
+            hosts.append((line[0], line[1], line[2]))
+    return hosts
+
+
+def get_whitelist():
+    print( "Please enter hosts you wish to track in the format:\n"
+           "\"IP:HOSTNAME:{DNS|ICMP|HTTP}\"\n"
+           "To exit leave the line blank <ENTER>")
+    hosts = []
+    while True:
+        x = input(">> ")
+        if x == '':
+            break
+        hosts.append(x)
+    return hosts
+
 
 
 def ip_in_list(ip, ip_list):
