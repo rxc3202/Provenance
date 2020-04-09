@@ -1,13 +1,15 @@
 import logging
 import threading
 from socketserver import UDPServer
-from util import parse_whitelist, get_whitelist, ip_in_list
+from util import parse_whitelist, get_whitelist
 from util.structs import ClientInfo
 from controllers.intefaces.model import ModelInterface
 import json
 from datetime import datetime
 import os.path
 from backend.server.ProvenanceClient import ProvenanceClientHandler
+from ipaddress import ip_network, ip_address, \
+	IPv4Address, IPv4Network, IPv6Address, IPv6Network
 
 
 class ProvenanceServer(UDPServer):
@@ -23,10 +25,14 @@ class ProvenanceServer(UDPServer):
 		super().__init__(server_address, handler, bind_and_activate)
 		self.logger = logging.getLogger("Provenance")
 		self.machines = {}
-		self.whitelist = []
-		self.blacklist = []
+		self.whitelist = set()
+		self.blacklist = set()
 		self.discovery = discovery
 		self._backup_dir = backup_dir
+
+		if restore:
+			self.logger.critical(f"Restoring backup from {restore[0]}")
+			self.restore(restore[0])
 
 		# Get the list of IPs we're supposed to interact with
 		if not discovery:
@@ -37,31 +43,43 @@ class ProvenanceServer(UDPServer):
 				# or manually by command line (eww)
 				hosts = get_whitelist()
 			for h in hosts:
-				self.add_host(ip=h[0], hostname=h[1], handler=h[2])
+				if '/' not in h[0]:
+					self.add_host(ip=h[0], hostname=h[1], handler=h[2])
+				self.whitelist.add(h[0])
 
-		if restore:
-			self.logger.critical(f"Restoring backup from {restore[0]}")
-			self.restore(restore[0])
+
+	@staticmethod
+	def _ip_in(ip, ip_list):
+		if ip not in ip_list:
+			return False
+
+		for x in ip_list:
+			y = ip_network(x) if '/' in x else ip_address(x)
+			if isinstance(y, IPv4Network) or isinstance(y, IPv6Network):
+				if ip_address(ip) in y:
+					return True
+			if isinstance(y, IPv4Address) or isinstance(y, IPv6Address):
+				if ip_address(ip) == y:
+					return True
 
 	def get_request(self):
 		return super().get_request()
 
 	def verify_request(self, request, client_address):
 		addr, _ = client_address
-
 		# If we're not doing discovery, only whitelisted IPs are valid
 		if not self.discovery:
-			if ip_in_list(addr, self.whitelist):
-				return super().verify_request(request, client_address)
+			if self._ip_in(addr, self.whitelist):
+				return True
 			else:
-				self.logger.info(f"{addr} not in whitelist.")
-				return
+				self.logger.warning(f"{addr} attempted to connect but isn't whitelisted")
+				return False
 		# Otherwise, we check if its in the whitelist
 		# but blacklist takes precedence
-		if ip_in_list(addr, self.whitelist):
-			if ip_in_list(addr, self.blacklist):
-				return
-		return super().verify_request(request, client_address)
+		if self._ip_in(addr, self.whitelist):
+			if self._ip_in(addr, self.blacklist):
+				return False
+		return True
 
 	def process_request(self, request, client_address):
 		addr, port = client_address
@@ -89,11 +107,8 @@ class ProvenanceServer(UDPServer):
 
 		for machine_dict in data:
 			ip = machine_dict["ip"]
-			client: ProvenanceClientHandler = self.RequestHandlerClass(
-				request=None, client_address=(ip, None), serverinfo=self.server_address
-			)
+			client = self.add_host(ip)
 			client.decode(machine_dict)
-			self.machines[ip] = client
 
 	def backup(self, fmt="%Y-%m-%d_%H~%M~%S", failover=True):
 		# If there are no machines being tracked we don't care
@@ -146,8 +161,8 @@ class ProvenanceServer(UDPServer):
 		)
 		if ip not in self.machines.keys():
 			self.machines[ip] = new_handler
-			return True
-		return False
+			return new_handler
+		return None
 
 	def get_machine_info(self, host):
 		host = self.machines[host]

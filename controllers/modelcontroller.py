@@ -108,7 +108,7 @@ class ModelController(object):
         :return: a string in minutes
         """
         info = self._server.get_machine_info(ip)
-        if info.active:
+        if info.active is not None:
             return f"{info.active}m"
         return "N/A"
 

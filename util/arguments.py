@@ -1,6 +1,4 @@
 import argparse
-from ipaddress import ip_network, ip_address, \
-    IPv4Address, IPv4Network, IPv6Address, IPv6Network
 
 
 def parse_arguments():
@@ -67,7 +65,8 @@ def parse_whitelist(filename):
 
 def get_whitelist():
     print( "Please enter hosts you wish to track in the format:\n"
-           "\"IP:HOSTNAME:{DNS|ICMP|HTTP}\"\n"
+           "\"IP:HOSTNAME:{DNS|ICMP|HTTP}\"\n\n"
+           "Or enter the subnet using CIDR_NOTATION:*:*"
            "To exit leave the line blank <ENTER>")
     hosts = []
     while True:
@@ -76,18 +75,3 @@ def get_whitelist():
             break
         hosts.append(x)
     return hosts
-
-
-
-def ip_in_list(ip, ip_list):
-    if not ip_list:
-        return False
-
-    for x in ip_list:
-        y = ip_network(x) if '/' in x else ip_address(x)
-        if isinstance(y, IPv4Network) or isinstance(y, IPv6Network):
-            if ip_address(ip) in y:
-                return True
-        if isinstance(y, IPv4Address) or isinstance(y, IPv6Address):
-            if ip_address(ip) == y:
-                return True
