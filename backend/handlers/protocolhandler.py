@@ -25,14 +25,16 @@ class ProtocolHandler(ABC):
     """
     def __init__(self, ip, socket):
         self.logger = logging.getLogger("Provenance")
-        self.ip = ip
-        self.socket = socket
+        self._ip = ip
+        self._socket = socket
 
-    def get_ip(self):
-        return self.ip
+    @property
+    def ip(self):
+        return self._ip
 
-    def get_socket(self):
-        return self.socket
+    @property
+    def socket(self):
+        return self._socket
 
     @abstractmethod
     def handle_request(self, raw_request, port: int, cmd: Command):

@@ -114,6 +114,7 @@ class ModelController(object):
 
     def get_machine_info(self, ip):
         info = self._server.get_machine_info(ip)
-        return ClientInfo(info.beacon, info.hostname, info.ip, f"{info.active}m", info.commands)
+        # TODO: fix this janky stuff
+        return ClientInfo(info.beacon, info.hostname, info.ip, self.get_last_active(ip), info.commands)
 
 

@@ -7,6 +7,7 @@ from controllers.intefaces.model import ModelInterface
 import json
 from datetime import datetime
 import os.path
+from backend.server.ProvenanceClient import ProvenanceClientHandler
 
 
 class ProvenanceServer(UDPServer):
@@ -17,17 +18,23 @@ class ProvenanceServer(UDPServer):
 	https://docs.python.org/3.7/library/socketserver.html
 	"""
 
-	def __init__(self, server_address, handler, bind_and_activate=True, discovery=True, whitelist=None, blacklist=None):
+	def __init__(self, server_address, handler, bind_and_activate=True, discovery=True, whitelist=None, blacklist=None,
+				 backup_dir="backups", restore=None):
 		super().__init__(server_address, handler, bind_and_activate)
 		self.logger = logging.getLogger("Provenance")
 		self.machines = {}
 		self.whitelist = []
 		self.blacklist = []
 		self.discovery = discovery
+		self._backup_dir = backup_dir
 		if whitelist:
 			self.whitelist = parse_ips(whitelist)
 		if blacklist:
 			self.blacklist = parse_ips(blacklist)
+
+		if restore:
+			self.logger.critical(f"Restoring backup from {restore[0]}")
+			self.restore(restore[0])
 
 	def get_request(self):
 		return super().get_request()
@@ -57,82 +64,77 @@ class ProvenanceServer(UDPServer):
 			self.machines[addr].update_handler(request, client_address)
 		else:
 			self.machines[addr] = self.RequestHandlerClass(
-				request=request, client_address=client_address, serverinfo=(addr, port))
+				request=request, client_address=client_address, serverinfo=self.server_address)
 		return self.finish_request(request, client_address)
 
 	def finish_request(self, request, client_address):
 		addr = client_address[0]
 		return self.machines[addr].handle()
 
+	# TODO: add function typing for ModelController Methods
+	def restore(self, file):
+		try:
+			with open(file, 'r') as file:
+				data = json.load(file)
+		except json.JSONDecodeError:
+			self.logger.critical(f"Could not restore from {file}")
+			return
 
-class ThreadedProvenanceServer(ProvenanceServer, ModelInterface):
-	""" A Threaded version of the Provenance server """
+		for machine_dict in data:
+			ip = machine_dict["ip"]
+			client: ProvenanceClientHandler = self.RequestHandlerClass(
+				request=None, client_address=(ip, None), serverinfo=self.server_address
+			)
+			client.decode(machine_dict)
+			self.machines[ip] = client
 
-	# Decides how threads will act upon termination of the
-	# main process
-	daemon_threads = False
-	# If true, server_close() waits until all non-daemonic threads terminate.
-	block_on_close = True
-	# For non-daemonic threads, list of threading.Threading objects
-	# used by server_close() to wait for all threads completion.
-	threads = []
+	def backup(self, fmt="%Y-%m-%d_%H~%M~%S", failover=True):
+		# If there are no machines being tracked we don't care
+		if not self.machines.keys():
+			return
 
-	def __init__(self, server_address, handler, bind_and_activate=True, discovery=True, whitelist=None, blacklist=None,
-				 backup_dir="backups"):
-		super().__init__(server_address, handler, bind_and_activate, discovery, whitelist, blacklist)
-		self.machines = {}
-		self.whitelist = []
-		self.blacklist = []
-		self._backup_dir = backup_dir
+		def save_failure(d):
+			if not failover:
+				self.logger.critical(f"Backup failover is off. Backup not created.")
+				return
 
-	# Server Handling Methods
-	def process_request(self, request, client_address):
-		# Create a unique handler for that machine if doesn't exist
-		# Otherwise update the info needed to send packets
-		addr, port = client_address
-		self.logger.debug(f"Processing request from: {addr}")
-		if addr in self.machines.keys():
-			self.machines[addr].update_handler(request, client_address)
-		else:
-			self.logger.info(f"New machine added: {addr}")
-			self.machines[addr] = self.RequestHandlerClass(
-				request=request, client_address=client_address, serverinfo=(addr, port))
+			p = os.path.join(d, f"provenance_backup.bak")
+			with open(p, "w") as out:
+				json.dump(encodings, out)
+			self.logger.critical(f"Creating safe backup file without errors: {p}")
 
-		thread = threading.Thread(
-			target=self.finish_request,
-			args=(request, client_address))
-		thread.daemon = self.daemon_threads
+		encodings = []
+		for m in self.machines.values():
+			encoding = m.encode()
+			encodings.append(encoding)
+		date = datetime.now().strftime(fmt)
+		cwd = os.getcwd()
+		filename = f"Provenance_{date}.bak"
+		path = os.path.join(cwd, self._backup_dir, filename)
+		if not os.path.exists(os.path.dirname(path)):
+			os.makedirs(os.path.dirname(path))
+		try:
+			with open(path, "w") as file:
+				json.dump(encodings, file)
+			self.logger.critical(f"Backup saved to: {path}")
+		except OSError as e:
+			self.logger.error("Couldn't create backup file due OSError")
+			self.logger.debug("Windows don't allow certain characters in filenames.")
+			save_failure(cwd)
 
-		# Shamelessly taken from socketserver.py
-		if not thread.daemon and self.block_on_close:
-			if self.threads is None:
-				self.threads = []
-			self.threads.append(thread)
-		thread.start()
-
-	def finish_request(self, request, client_address):
-		addr = client_address[0]
-		return self.machines[addr].handle()
+	def shutdown(self):
+		pass
 
 	# ===========================================
 	# Model Interface Methods
 	# ===========================================
 
-	def shutdown(self):
-		self.logger.critical(f"Server shutting down")
-		super().server_close()
-		if self.block_on_close:
-			_threads = self.threads
-			self.threads = None
-			if _threads:
-				for t in _threads:
-					t.join()
-
 	def get_hosts(self):
 		return self.machines.keys()
 
 	def add_host(self, ip, **kwargs):
-		new_handler = self.RequestHandlerClass(request=None, client_address=(ip, None),
+		new_handler = self.RequestHandlerClass(request=None,
+											   client_address=(ip, None),
 											   serverinfo=self.server_address, **kwargs)
 		if ip not in self.machines.keys():
 			self.machines[ip] = new_handler
@@ -170,36 +172,59 @@ class ThreadedProvenanceServer(ProvenanceServer, ModelInterface):
 		machine = self.machines[ip]
 		return machine.get_hostname()
 
-	def backup(self, fmt="%Y-%m-%d_%H~%M~%S", failover=True):
-		# If there are no machines being tracked we don't care
-		if self.machines.keys():
-			return
 
-		def save_failure(d):
-			if not failover:
-				self.logger.critical(f"Backup failover is off. Backup not created.")
-				return
+class ThreadedProvenanceServer(ProvenanceServer, ModelInterface):
+	""" A Threaded version of the Provenance server """
 
-			p = os.path.join(d, f"provenance_backup.bak")
-			with open(p, "w") as out:
-				json.dump(encodings, out)
-			self.logger.critical(f"Creating safe backup file without errors: {p}")
+	# Decides how threads will act upon termination of the
+	# main process
+	daemon_threads = False
+	# If true, server_close() waits until all non-daemonic threads terminate.
+	block_on_close = True
+	# For non-daemonic threads, list of threading.Threading objects
+	# used by server_close() to wait for all threads completion.
+	threads = []
 
-		encodings = []
-		for m in self.machines.values():
-			encoding = m.encode()
-			encodings.append(encoding)
-		date = datetime.now().strftime(fmt)
-		cwd = os.getcwd()
-		filename = f"Provenance_{date}.bak"
-		path = os.path.join(cwd, self._backup_dir, filename)
-		if not os.path.exists(os.path.dirname(path)):
-			os.makedirs(os.path.dirname(path))
-		try:
-			with open(path, "w") as file:
-				json.dump(encodings, file)
-			self.logger.critical(f"Backup saved to: {path}")
-		except OSError as e:
-			self.logger.error("Couldn't create backup file due OSError")
-			self.logger.debug("Windows don't allow certain characters in filenames.")
-			save_failure(cwd)
+	def __init__(self, server_address, handler, bind_and_activate=True, discovery=True,
+				 whitelist=None, blacklist=None, backup_dir="backups", restore=None):
+		super().__init__(server_address, handler, bind_and_activate,
+						 discovery, whitelist, blacklist, backup_dir, restore)
+
+	# Server Handling Methods
+	def process_request(self, request, client_address):
+		# Create a unique handler for that machine if doesn't exist
+		# Otherwise update the info needed to send packets
+		addr, port = client_address
+		self.logger.debug(f"Processing request from: {addr}")
+		if addr in self.machines.keys():
+			self.machines[addr].update_handler(request, client_address)
+		else:
+			self.logger.info(f"New machine added: {addr}")
+			self.machines[addr] = self.RequestHandlerClass(
+				request=request, client_address=client_address, serverinfo=(addr, port))
+
+		thread = threading.Thread(
+			target=self.finish_request,
+			args=(request, client_address))
+		thread.daemon = self.daemon_threads
+
+		# Shamelessly taken from socketserver.py
+		if not thread.daemon and self.block_on_close:
+			if self.threads is None:
+				self.threads = []
+			self.threads.append(thread)
+		thread.start()
+
+	def finish_request(self, request, client_address):
+		addr = client_address[0]
+		return self.machines[addr].handle()
+
+	def shutdown(self):
+		self.logger.critical(f"Server shutting down")
+		super().server_close()
+		if self.block_on_close:
+			_threads = self.threads
+			self.threads = None
+			if _threads:
+				for t in _threads:
+					t.join()

@@ -24,6 +24,7 @@ class CommandType(Enum):
             cls.CMD: "cmd",
             cls.BASH: "bash"
         }
+        return d[key]
 
     @classmethod
     def decode(cls, encoded_key: str):
@@ -37,13 +38,10 @@ class CommandType(Enum):
 
 
 """
-A simple structure allowing for a more intuitive semantic understanding
+A simple class allowing for a more intuitive semantic understanding
 of the commands passed between parts of the Provenance server rather than
 accessing them using indices
 """
-#Command = namedtuple("Command", ["type", "command", "uid"])
-
-
 class Command(object):
 
     __slots__ = ["_type", "_command", "_uid"]

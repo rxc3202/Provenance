@@ -15,14 +15,25 @@ from controllers import *
 
 
 def main():
-	global args
 	args = argopts.parse_arguments()
 	socket = (args.interface, args.port)
 
+	# Initialize Logging settings for Provenance, basically telling
+	# the "Provenance" logger to redirect to the specified logfile AND
+	# to the UI
+	logger_controller = LoggingController(logfile="logs/provenance.log")
+	logger = logging.getLogger("Provenance")
+
 	# Initialize Backend
 	try:
-		if args.threaded:
-			server = ThreadedProvenanceServer(server_address=socket, handler=ProvenanceClientHandler, discovery=args.discovery)
+		if args.threading:
+			server = ThreadedProvenanceServer(
+				server_address=socket,
+				handler=ProvenanceClientHandler,
+				discovery=args.discovery,
+				backup_dir="backups",
+				restore=args.restore
+			)
 			# Start a thread with the server -- that thread will then start one
 			# more thread for each request
 			server_thread = threading.Thread(target=server.serve_forever)
@@ -38,8 +49,6 @@ def main():
 	# Initialize Controllers for model-ui interactions
 	ui_controller = UIController()
 	model_controller = ModelController(server)
-	logger_controller = LoggingController(logfile="logs/provenance.log")
-	logger = logging.getLogger("Provenance")
 	logger.critical(f"Server starting on {socket[0]}:{socket[1]}.")
 
 	# Initialize Frontend

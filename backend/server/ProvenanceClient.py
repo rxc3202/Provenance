@@ -1,5 +1,6 @@
 from socketserver import BaseRequestHandler
-import backend.handlers as handlers
+from backend.handlers.protocolhandler import ProtocolHandler
+from backend.handlers.dns import DNSHandler
 from datetime import datetime
 from util.structs import CommandType, Command
 from collections import deque
@@ -8,34 +9,59 @@ from typing import Union
 
 class ProvenanceClientHandler(BaseRequestHandler):
 
+    beacon_types = {
+        "DNS": DNSHandler
+    }
+
     _client_count = 0
 
     """ Builtin Functions"""
-    def __init__(self, request, client_address, serverinfo, hostname=None, handler=None):
+    def __init__(self, request, client_address, serverinfo, handler="DNS", hostname=None, commands=None):
         # Superclass initialization
         self.request = request
         self.client_address = client_address
         self.server = serverinfo
 
         # Subclass Initialization
-        self._hostname = hostname or f"Client_{self._client_count}"
+        self._hostname = hostname or f"Client_{ProvenanceClientHandler._client_count}"
         self._os = None
         self._queued_commands = deque()
         self._sent_commands = []
         self._command_count = 0
         self._last_active: Union[datetime, None] = None
-        self._client_count += 1
 
         # The model that tracks each controlled machine
         # TODO: somehow dynamically assess the protocol (maybe set up multiple ports)
         self._protocol_handler = None
         if request:
-            self._protocol_handler = handler or handlers.dns.DNSHandler(
+            handler_type = self.beacon_types[handler]
+            self._protocol_handler = handler_type(
                 ip=client_address[0], socket=request[1]
             )
 
+        ProvenanceClientHandler._client_count += 1
+
     def __repr__(self):
         return f"ProvenanceClient{{{self.server[1]}, {self._hostname}}}"
+
+    def decode(self, data):
+        beacon = data["beacon"]
+        hostname = data["hostname"]
+        ip = data["ip"]
+        commands = data["commands"]
+
+        beacon_handler = ProvenanceClientHandler.beacon_types[beacon]
+        self._protocol_handler = beacon_handler(ip, None)
+        self._hostname = hostname
+        self.client_address = (ip, None)
+        self._last_active = None
+        for c in commands:
+            self.queue_command(
+                ctype=c["type"],
+                cmd=c["command"]
+            )
+        # TODO: change uid to not numbers so we don't have to update UID to correct value
+        self._command_count = int(commands[-1]["uid"])
 
     def encode(self):
         return {
@@ -62,8 +88,12 @@ class ProvenanceClientHandler(BaseRequestHandler):
         """
         self.client_address = client_address
         self.request = request
-        if not self._protocol_handler:
-            self._protocol_handler = handlers.dns.DNSHandler(
+        # If we have not set a protocol handler because we added the machine manuall
+        # OR If we are restoring from backup
+        # Either case we don't have an active socket and must use the socket from
+        # the incoming request
+        if not self._protocol_handler or self._protocol_handler.socket is None:
+            self._protocol_handler = DNSHandler(
                 ip=client_address[0], socket=request[1]
             )
 

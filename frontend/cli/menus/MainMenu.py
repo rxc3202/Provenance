@@ -31,7 +31,7 @@ class MainMenu(Frame):
         self._rem_host_button = Button("Remove Host", self._remove_host)
         self._add_cmd_button = Button("Add CMD", self._add_command)
         self._rem_cmd_button = Button("Settings", self._options_command)
-        self._refresh_button = Button("Refresh", self._refresh)
+        self._refresh_button = Button("Create Backup", self._refresh)
         self._exit_button = Button("Exit", self._exit_command)
 
         # Generation
