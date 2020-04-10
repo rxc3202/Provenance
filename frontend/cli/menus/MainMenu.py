@@ -4,7 +4,7 @@ from asciimatics.exceptions import NextScene
 from util.structs import ClientInfo
 from controllers import *
 import sys
-from util.validators import ip_validator
+from util.validators import ip_validator, hostname_validator
 
 
 class MainMenu(Frame):
@@ -149,6 +149,8 @@ class MainMenu(Frame):
 
 class FilterMenu(Frame):
 
+    reset_data = {"beacon": None, "ips": '', "active": '', "hostname": ''}
+
     def __init__(self, screen, model: ModelController, ui: UIController):
         super(FilterMenu, self).__init__(screen,
                                          height=screen.height * 3//4,
@@ -163,7 +165,7 @@ class FilterMenu(Frame):
         self._ui: UIController = ui
 
         # Initialize Widgets
-        self._clear_button = Button("Clear", on_click=self._clear, add_box=True)
+        self._clear_button = Button("Clear", on_click=self._clear_filters, add_box=True)
         self._apply_button = Button("Apply", on_click=self._apply, add_box=True)
         self._beacon_header = Text(disabled=True)
         self._beacon_header.value = "Beacon Type: "
@@ -209,21 +211,41 @@ class FilterMenu(Frame):
         # Fix all widgets to Frame
         self.fix()
 
+    def save(self, validate=False):
+        super().save(validate)
+        # Encoding raw strings for regex only
+        raw = self.data["hostname"].encode('unicode-escape').decode()
+        self.data["hostname"] = raw
+
     def _validate(self):
         def fail(msg):
             dialog = PopUpDialog(self._screen, f"  {msg}  ", buttons=["OK"], theme="warning")
             self._scene.add_effect(dialog)
             return False
+
+        self.save()
+        if self.data["ips"]:
+            failure = ip_validator(self.data["ips"])
+            if failure:
+                fail(f"Invalid IP or subnet: {failure} in Filter Menu")
+                return False
+        if self.data["hostname"]:
+            if not hostname_validator(self.data["hostname"]):
+                fail(f"Invalid Python3 regex: {self.data['hostname']}")
+                return False
         return True
 
     def _apply(self):
         self.save()
-        self._validate()
-        print(self.data)
+        if not self._validate():
+            return
         self._model.filters = self.data
 
-    def _clear(self):
-        pass
+    def _clear_filters(self):
+        self.reset()
+        self.data = self.reset_data
+        # Do this to refresh the screen
+        self._model.filters = self.data
 
     def _help(self):
         pass

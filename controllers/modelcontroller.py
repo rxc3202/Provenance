@@ -13,11 +13,17 @@ class ModelController(object):
         """ The current selected machine to display extended information"""
         self._current_machine = None
         """ The machines that are being displayed on the UI"""
-        self._displayed_machines = set()
+        self._displayed_machines = []
         """ The filter that determines the display machines"""
         self._filters = []
         """ The amount of times in seconds the controller will query info from the server """
         self._refresh_interval = 2
+
+        for ip in self._server.get_hosts():
+            info = self.get_machine_info(ip)
+            next_command = info.commands[0].command if info.commands else "N/A"
+            tup = (info.beacon, info.hostname, info.ip, info.active, next_command)
+            self._displayed_machines.append(tup)
 
     # Backend Commands
     @property
@@ -35,15 +41,7 @@ class ModelController(object):
 
     @property
     def displayed_machines(self):
-        machine_info = []
-        # add a filter to this to change it
-        self._displayed_machines = self._server.get_hosts()
-        for ip in self._displayed_machines:
-            info = self.get_machine_info(ip)
-            next_command = info.commands[0].command if info.commands else "N/A"
-            tup = (info.beacon, info.hostname, info.ip, info.active, next_command)
-            machine_info.append(tup)
-        return machine_info
+        return self._displayed_machines
 
     @property
     def filters(self):
@@ -55,8 +53,6 @@ class ModelController(object):
         if  expected_values != set(new_filter.keys()):
             raise ValueError(f"modelcontoller.filter must contain values: {expected_values}")
 
-        # TODO: do intelligent clearing. If a filter hasn't changed then dont clear it
-        self._filters = []
         def ip_helper(ip, str):
             lst = str.strip().split(',')
             for x in lst:
@@ -68,31 +64,43 @@ class ModelController(object):
                     if ip_address(ip) == y:
                         return True
 
+        # Generate the new filters
+        self._filters = []
+        filters_changed = False
         if new_filter["ips"]:
+            filters_changed = True
             print("ips filter added")
-            self._filters.append(lambda x: ip_helper(x, new_filter["ip"]))
+            self._filters.append(lambda x: ip_helper(x.ip, new_filter["ips"]))
         if new_filter["hostname"]:
+            filters_changed = True
             print("hostname filter added")
-            self._filters.append(lambda x: re.compile(new_filter["hostname"]).match(x.hostname) is not None)
+            self._filters.append(lambda x: re.compile(new_filter["hostname"]).search(x.hostname) is not None)
         if new_filter["beacon"]:
+            filters_changed = True
             print("beacon filter added")
-            self._filters.append(lambda x: (x.beacon_type == new_filter["beacon"]) or new_filter["beacon"] is None)
+            self._filters.append(lambda x: (x.beacon == new_filter["beacon"]) or new_filter["beacon"] is None)
         if new_filter["active"]:
+            filters_changed = True
             print("active filter added")
-            self._filters.append(lambda x: x.active < int(new_filter["active"]))
+            self._filters.append(lambda x: int(x.active) <= int(new_filter["active"]))
 
-    def _all_machine_info(self):
-        machine_info = []
-        # add a filter to this to change it
-        self._displayed_machines = self._server.get_hosts()
-        for ip in self._displayed_machines:
+        # Apply the filters to the hosts that are being displayed
+        new_displayed_machines = []
+        for ip in self._server.get_hosts():
             info = self.get_machine_info(ip)
+            # Only if the users has set new filters
+            if filters_changed:
+                # Check if the machine passes all filters
+                res = [f(info) for f in self._filters]
+                if not all(res):
+                    continue
+            # If there are no changes to the filters or the machine passed the test then add it
             next_command = info.commands[0].command if info.commands else "N/A"
             tup = (info.beacon, info.hostname, info.ip, info.active, next_command)
-            machine_info.append(tup)
-        return machine_info
+            new_displayed_machines.append(tup)
+        self._displayed_machines = new_displayed_machines
 
-
+        # TODO: do intelligent clearing. If a filter hasn't changed then dont clear it
 
     # ===========================================
     # Global Server Functions

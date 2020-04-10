@@ -1,3 +1,4 @@
+import re
 from ipaddress import ip_address, ip_network, IPv4Address, IPv4Network, \
     IPv6Network, IPv6Address
 
@@ -28,3 +29,12 @@ def ip_validator(ips: str):
         return failure
 
     return None
+
+
+def hostname_validator(hostname: str):
+    try:
+        re.compile(hostname)
+        return True
+    except re.error:
+        print("regex fail")
+        return False
