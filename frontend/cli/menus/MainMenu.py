@@ -70,7 +70,7 @@ class MainMenu(Frame):
             titles=fields,
             add_scroll_bar=True,
             on_select=self._view_host,
-            name="machines",
+            name="machines"
         )
 
     # Backend Methods
@@ -85,7 +85,10 @@ class MainMenu(Frame):
 
     def _reload_page(self):
         machines = self._refresh_hosts()
+        # TODO: make a more efficient way to propogate changes so we dont reload the list every time
+        tmp = self._machine_list_widget.value
         self._machine_list_widget.options = [(x, i) for i, x in enumerate(machines)]
+        self._machine_list_widget.value = tmp
 
     # Menu Actions Methods
     def _refresh(self):
@@ -141,7 +144,7 @@ class MainMenu(Frame):
     def _update(self, frame_no):
         if self._ui.theme != self._theme:
             self.set_theme(self._ui.theme)
-        self._reload_page()
+        # self._reload_page()
         super()._update(frame_no)
 
     def set_theme(self, theme):

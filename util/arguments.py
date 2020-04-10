@@ -58,6 +58,8 @@ def parse_whitelist(filename):
     hosts = []
     with open(filename, 'r') as file:
         for line in file:
+            if '#' in line:
+                continue
             line = line.strip().split(':')
             hosts.append((line[0], line[1], line[2]))
     return hosts
