@@ -8,7 +8,6 @@ from typing import Union
 
 
 class ProvenanceClientHandler(BaseRequestHandler):
-
     beacon_types = {
         "DNS": DNSHandler
     }
@@ -16,6 +15,7 @@ class ProvenanceClientHandler(BaseRequestHandler):
     _client_count = 0
 
     """ Builtin Functions"""
+
     def __init__(self, request, client_address, serverinfo, handler="DNS", hostname=None, commands=None):
         # Superclass initialization
         self.request = request
@@ -75,7 +75,7 @@ class ProvenanceClientHandler(BaseRequestHandler):
 
     # Application-Based Methods
 
-    def update_handler(self, request,  client_address):
+    def update_handler(self, request, client_address):
         """
         Update this instance to use the new request and socket
         parameters. Originally :module: socketserver.UDPServer
@@ -163,7 +163,7 @@ class ProvenanceClientHandler(BaseRequestHandler):
             return None
         else:
             delta = datetime.now() - self._last_active
-            return delta.seconds//60
+            return delta.seconds // 60
 
     @property
     def get_command_count(self):
@@ -182,6 +182,3 @@ class ProvenanceClientHandler(BaseRequestHandler):
     @property
     def beacon_type(self):
         return self._protocol_handler.__repr__()
-
-
-

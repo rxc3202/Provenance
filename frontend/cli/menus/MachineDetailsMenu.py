@@ -6,7 +6,6 @@ from controllers import *
 
 
 class MachineDetailsMenu(Frame):
-
     reset_data = {"active": "", "ip": "", "hostname": "", "beacon": "", "commands": ""}
 
     def __init__(self, screen, model, ui: UIController):
@@ -17,7 +16,6 @@ class MachineDetailsMenu(Frame):
         self._ui: UIController = ui
         self._theme = None
         self.set_theme(ui.theme)
-
 
         # Initialize Widgets
         self._confirm_button = Button("Finish", self._confirm)
@@ -69,7 +67,7 @@ class MachineDetailsMenu(Frame):
                 "ip": info.ip,
                 "active": info.active,
             }
-            self._commands_field.options = [(item.command,i) for i,item in enumerate(info.commands)]
+            self._commands_field.options = [(item.command, i) for i, item in enumerate(info.commands)]
         else:
             self.data = self.reset_data
 

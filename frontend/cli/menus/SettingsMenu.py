@@ -6,7 +6,6 @@ from controllers import *
 
 
 class SettingsMenu(Frame):
-
     reset_data = {}
 
     _logging_options = {
@@ -94,7 +93,6 @@ class SettingsMenu(Frame):
         self._ui.theme = self.data["theme"]
         self._ui.refresh_rate = int(self.data["refresh"])
         raise NextScene("Main")
-
 
     # ====================================
     # Overridden functions

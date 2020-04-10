@@ -7,7 +7,6 @@ from controllers import UIController
 
 
 class AddCommandMenu(Frame):
-
     reset_data = {"ips": '', "cmdtype": "ps", "commands": ['']}
 
     def __init__(self, screen, model, ui: UIController):

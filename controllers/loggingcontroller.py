@@ -4,7 +4,6 @@ import os
 
 
 class LoggingController(object):
-
     logfile_date_format = "%Y-%m-%d %H:%M:%S"
     ui_date_format = "%H:%M:%S"
 
@@ -42,11 +41,13 @@ class LoggingController(object):
         of the record in order to do filtering based on time
         :return: a function specified by python3 logging.getLoggingRecordFactory()
         """
+
         def record_factory(*args, **kwargs) -> logging.LogRecord:
             record = self._old_factory(*args, **kwargs)
             # inject the "create_time" field into all records
             record.creation_time = datetime.now()
             return record
+
         return record_factory
 
     def get_messages(self):
@@ -64,7 +65,6 @@ class LoggingController(object):
 
 
 class ProvenanceLoggingFilter(logging.Filter):
-
     _last_time = datetime.now()
 
     def __init__(self):

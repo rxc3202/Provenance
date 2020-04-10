@@ -12,7 +12,7 @@ class MainMenu(Frame):
     def __init__(self, screen, model: ModelController, ui: UIController):
         super(MainMenu, self).__init__(screen,
                                        height=screen.height * 3 // 4,
-                                       width=screen.width * 3//4,
+                                       width=screen.width * 3 // 4,
                                        hover_focus=True,
                                        can_scroll=False,
                                        on_load=self._reload_page,
@@ -63,7 +63,7 @@ class MainMenu(Frame):
         fields = ["Type", "Hostname", "IP", "Last Active", "Next Command"]
         return MultiColumnListBox(
             height=Widget.FILL_FRAME,
-            columns=[f"<{100//len(fields)}%" for _ in fields],
+            columns=[f"<{100 // len(fields)}%" for _ in fields],
             options=[(x, i) for i, x in enumerate(machines)],
             titles=fields,
             add_scroll_bar=True,
@@ -148,18 +148,17 @@ class MainMenu(Frame):
 
 
 class FilterMenu(Frame):
-
     reset_data = {"beacon": None, "ips": '', "active": '', "hostname": ''}
 
     def __init__(self, screen, model: ModelController, ui: UIController):
         super(FilterMenu, self).__init__(screen,
-                                         height=screen.height * 3//4,
-                                         width=screen.width * 1//4 + 1,
+                                         height=screen.height * 3 // 4,
+                                         width=screen.width * 1 // 4 + 1,
                                          hover_focus=True,
                                          can_scroll=False,
                                          on_load=None,
                                          title="Filter",
-                                         x=screen.width * 3//4,
+                                         x=screen.width * 3 // 4,
                                          y=0)
         self._model: ModelController = model
         self._ui: UIController = ui
@@ -169,7 +168,8 @@ class FilterMenu(Frame):
         self._apply_button = Button("Apply", on_click=self._apply, add_box=True)
         self._beacon_header = Text(disabled=True)
         self._beacon_header.value = "Beacon Type: "
-        self._beacon_type = DropdownList([("All", None), ("DNS", "DNS"), ("HTTP", "HTTP"), ("ICMP", "ICMP")], name="beacon")
+        self._beacon_type = DropdownList([("All", None), ("DNS", "DNS"), ("HTTP", "HTTP"), ("ICMP", "ICMP")],
+                                         name="beacon")
 
         self._active_header = Text(disabled=True)
         self._active_header.value = "Last Active (in minutes): "
@@ -203,7 +203,7 @@ class FilterMenu(Frame):
         layout.add_widget(self._filler)
         layout.add_widget(Divider())
 
-        buttons = Layout([1,1])
+        buttons = Layout([1, 1])
         self.add_layout(buttons)
         buttons.add_widget(self._apply_button, 0)
         buttons.add_widget(self._clear_button, 1)
@@ -270,12 +270,11 @@ class FilterMenu(Frame):
 
 
 class LogMenu(Frame):
-
     MAX_LOG_COUNT = 50
 
     def __init__(self, screen, model: ModelController, logger: LoggingController, ui: UIController):
         super(LogMenu, self).__init__(screen,
-                                      height=screen.height//4,
+                                      height=screen.height // 4,
                                       width=screen.width,
                                       hover_focus=True,
                                       can_scroll=False,

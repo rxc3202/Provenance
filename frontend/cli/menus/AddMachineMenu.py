@@ -7,11 +7,10 @@ from ipaddress import IPv4Address
 
 
 class AddMachineMenu(Frame):
-
     reset_data = {"ip": "", "hostname": "", "beacon": ""}
 
     def __init__(self, screen, model, ui: UIController):
-        super().__init__(screen, height=screen.height //2, width=screen.width //2, can_scroll=False, title="Add Host",
+        super().__init__(screen, height=screen.height // 2, width=screen.width // 2, can_scroll=False, title="Add Host",
                          hover_focus=True)
 
         self._model: ModelInterface = model

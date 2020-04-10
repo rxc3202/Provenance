@@ -66,10 +66,10 @@ def parse_whitelist(filename):
 
 
 def get_whitelist():
-    print( "Please enter hosts you wish to track in the format:\n"
-           "\"IP:HOSTNAME:{DNS|ICMP|HTTP}\"\n\n"
-           "Or enter the subnet using CIDR_NOTATION:*:*"
-           "To exit leave the line blank <ENTER>")
+    print("Please enter hosts you wish to track in the format:\n"
+          "\"IP:HOSTNAME:{DNS|ICMP|HTTP}\"\n\n"
+          "Or enter the subnet using CIDR_NOTATION:*:*"
+          "To exit leave the line blank <ENTER>")
     hosts = []
     while True:
         x = input(">> ")

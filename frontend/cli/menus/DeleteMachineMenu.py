@@ -6,7 +6,6 @@ from controllers import *
 
 
 class DeleteMachineMenu(Frame):
-
     reset_data = {"ip": "", "hostname": ""}
 
     def __init__(self, screen, model, ui: UIController):

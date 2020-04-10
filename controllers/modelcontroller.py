@@ -50,7 +50,7 @@ class ModelController(object):
     @filters.setter
     def filters(self, new_filter: dict):
         expected_values = {"ips", "hostname", "beacon", "active"}
-        if  expected_values != set(new_filter.keys()):
+        if expected_values != set(new_filter.keys()):
             raise ValueError(f"modelcontoller.filter must contain values: {expected_values}")
 
         def ip_helper(ip, str):
@@ -196,5 +196,3 @@ class ModelController(object):
         info = self._server.get_machine_info(ip)
         # TODO: fix this janky stuff
         return ClientInfo(info.beacon, info.hostname, info.ip, self.get_last_active(ip), info.commands)
-
-

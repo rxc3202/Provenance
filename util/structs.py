@@ -42,8 +42,9 @@ A simple class allowing for a more intuitive semantic understanding
 of the commands passed between parts of the Provenance server rather than
 accessing them using indices
 """
-class Command(object):
 
+
+class Command(object):
     __slots__ = ["_type", "_command", "_uid"]
     _keys = [x.replace('_', '') for x in __slots__]
 
@@ -113,14 +114,9 @@ class Command(object):
             return None
 
 
-
 """
 A simple structure allowing for a more intuitive semantic understanding
 of the information queried from server representation of the clients rather than
 accessing them using indices
 """
 ClientInfo = namedtuple("ClientInfo", ["beacon", "hostname", "ip", "active", "commands"])
-
-
-
-

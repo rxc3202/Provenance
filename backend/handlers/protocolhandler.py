@@ -3,6 +3,7 @@ from enum import Enum
 import logging
 from util.structs import Command
 
+
 class Commands(Enum):
     """ The types of commands that can be on the victim
 
@@ -23,6 +24,7 @@ class ProtocolHandler(ABC):
     to be implemented so that Provenance can handle the
     request being received with the correct protocol.
     """
+
     def __init__(self, ip, socket):
         self.logger = logging.getLogger("Provenance")
         self._ip = ip

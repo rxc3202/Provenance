@@ -8,7 +8,6 @@ from controllers import *
 
 
 class ProvenanceCLI(object):
-
     model: ModelController = None
     logger: LoggingController = None
     ui: UIController = None
