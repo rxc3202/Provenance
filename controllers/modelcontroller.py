@@ -1,5 +1,8 @@
 from util.structs import ClientInfo
 from controllers.intefaces.model import ModelInterface
+from ipaddress import ip_address, ip_network, IPv4Address, IPv4Network, \
+    IPv6Network, IPv6Address
+import re
 
 
 class ModelController(object):
@@ -12,7 +15,7 @@ class ModelController(object):
         """ The machines that are being displayed on the UI"""
         self._displayed_machines = set()
         """ The filter that determines the display machines"""
-        self._filter = None
+        self._filters = []
         """ The amount of times in seconds the controller will query info from the server """
         self._refresh_interval = 2
 
@@ -41,6 +44,55 @@ class ModelController(object):
             tup = (info.beacon, info.hostname, info.ip, info.active, next_command)
             machine_info.append(tup)
         return machine_info
+
+    @property
+    def filters(self):
+        return self._filters
+
+    @filters.setter
+    def filters(self, new_filter: dict):
+        expected_values = {"ips", "hostname", "beacon", "active"}
+        if  expected_values != set(new_filter.keys()):
+            raise ValueError(f"modelcontoller.filter must contain values: {expected_values}")
+
+        # TODO: do intelligent clearing. If a filter hasn't changed then dont clear it
+        self._filters = []
+        def ip_helper(ip, str):
+            lst = str.strip().split(',')
+            for x in lst:
+                y = ip_network(x) if '/' in x else ip_address(x)
+                if isinstance(y, IPv4Network) or isinstance(y, IPv6Network):
+                    if ip_address(ip) in y:
+                        return True
+                if isinstance(y, IPv4Address) or isinstance(y, IPv6Address):
+                    if ip_address(ip) == y:
+                        return True
+
+        if new_filter["ips"]:
+            print("ips filter added")
+            self._filters.append(lambda x: ip_helper(x, new_filter["ip"]))
+        if new_filter["hostname"]:
+            print("hostname filter added")
+            self._filters.append(lambda x: re.compile(new_filter["hostname"]).match(x.hostname) is not None)
+        if new_filter["beacon"]:
+            print("beacon filter added")
+            self._filters.append(lambda x: (x.beacon_type == new_filter["beacon"]) or new_filter["beacon"] is None)
+        if new_filter["active"]:
+            print("active filter added")
+            self._filters.append(lambda x: x.active < int(new_filter["active"]))
+
+    def _all_machine_info(self):
+        machine_info = []
+        # add a filter to this to change it
+        self._displayed_machines = self._server.get_hosts()
+        for ip in self._displayed_machines:
+            info = self.get_machine_info(ip)
+            next_command = info.commands[0].command if info.commands else "N/A"
+            tup = (info.beacon, info.hostname, info.ip, info.active, next_command)
+            machine_info.append(tup)
+        return machine_info
+
+
 
     # ===========================================
     # Global Server Functions

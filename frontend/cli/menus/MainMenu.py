@@ -4,6 +4,7 @@ from asciimatics.exceptions import NextScene
 from util.structs import ClientInfo
 from controllers import *
 import sys
+from util.validators import ip_validator
 
 
 class MainMenu(Frame):
@@ -55,9 +56,6 @@ class MainMenu(Frame):
         self.fix()
 
     # Widget Initializations
-
-    def _init_filter_widget(self):
-        pass
 
     def _init_machine_list_widget(self):
         machines = self.model.displayed_machines
@@ -165,21 +163,28 @@ class FilterMenu(Frame):
         self._ui: UIController = ui
 
         # Initialize Widgets
-        self._clear_button = Button("Clear Filters", on_click=self._clear, add_box=False)
+        self._clear_button = Button("Clear", on_click=self._clear, add_box=True)
+        self._apply_button = Button("Apply", on_click=self._apply, add_box=True)
         self._beacon_header = Text(disabled=True)
         self._beacon_header.value = "Beacon Type: "
-        self._beacon_type = DropdownList([("All", "ALL"), ("DNS", "DNS"), ("HTTP", "HTTP"), ("ICMP", "ICMP")], name="beacon")
+        self._beacon_type = DropdownList([("All", None), ("DNS", "DNS"), ("HTTP", "HTTP"), ("ICMP", "ICMP")], name="beacon")
 
         self._active_header = Text(disabled=True)
         self._active_header.value = "Last Active (in minutes): "
-        self._active_field = Text()
+        self._active_field = Text(name="active")
 
         self._ip_header = Text(disabled=True)
         self._ip_header.value = "IPs and/or subnet(s): "
         self._ip_input = Text(name="ips")
+
+        self._hostname_header = Text(disabled=True)
+        self._hostname_header.value = "Hostname: "
+        self._hostname_input = Text(name="hostname")
+
         self._filler = TextBox(Widget.FILL_FRAME, disabled=True)
         # Default values
-        self._active_field.value = "10"
+        self._active_field.value = None
+        self._ip_input.value = None
 
         # Add Widgets to Frame
         layout = Layout([1], fill_frame=True)
@@ -190,18 +195,37 @@ class FilterMenu(Frame):
         layout.add_widget(self._active_field)
         layout.add_widget(self._ip_header)
         layout.add_widget(self._ip_input)
+        layout.add_widget(self._hostname_header)
+        layout.add_widget(self._hostname_input)
 
         layout.add_widget(self._filler)
         layout.add_widget(Divider())
 
-        buttons = Layout([1])
+        buttons = Layout([1,1])
         self.add_layout(buttons)
-        buttons.add_widget(self._clear_button)
+        buttons.add_widget(self._apply_button, 0)
+        buttons.add_widget(self._clear_button, 1)
 
         # Fix all widgets to Frame
         self.fix()
 
+    def _validate(self):
+        def fail(msg):
+            dialog = PopUpDialog(self._screen, f"  {msg}  ", buttons=["OK"], theme="warning")
+            self._scene.add_effect(dialog)
+            return False
+        return True
+
+    def _apply(self):
+        self.save()
+        self._validate()
+        print(self.data)
+        self._model.filters = self.data
+
     def _clear(self):
+        pass
+
+    def _help(self):
         pass
 
     # ====================================
