@@ -60,7 +60,7 @@ class MainMenu(Frame):
         pass
 
     def _init_machine_list_widget(self):
-        machines = self._refresh_hosts()
+        machines = self.model.displayed_machines
 
         fields = ["Type", "Hostname", "IP", "Last Active", "Next Command"]
         return MultiColumnListBox(
@@ -74,17 +74,9 @@ class MainMenu(Frame):
         )
 
     # Backend Methods
-    def _refresh_hosts(self):
-        machines = []
-        for ip in self.model.get_hosts():
-            info = self.model.get_machine_info(ip)
-            next_command = info.commands[0].command if info.commands else "N/A"
-            tup = (info.beacon, info.hostname, info.ip, info.active, next_command)
-            machines.append(tup)
-        return machines
 
     def _reload_page(self):
-        machines = self._refresh_hosts()
+        machines = self.model.displayed_machines
         # TODO: make a more efficient way to propogate changes so we dont reload the list every time
         tmp = self._machine_list_widget.value
         self._machine_list_widget.options = [(x, i) for i, x in enumerate(machines)]
@@ -144,7 +136,7 @@ class MainMenu(Frame):
     def _update(self, frame_no):
         if self._ui.theme != self._theme:
             self.set_theme(self._ui.theme)
-        # self._reload_page()
+        self._reload_page()
         super()._update(frame_no)
 
     def set_theme(self, theme):

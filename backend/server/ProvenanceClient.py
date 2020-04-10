@@ -68,8 +68,8 @@ class ProvenanceClientHandler(BaseRequestHandler):
         return {
             "beacon": self.beacon_type,
             "hostname": self._hostname,
-            "ip": self.get_ip,
-            "active": self.get_last_active,
+            "ip": self.ip,
+            "active": self.last_active,
             "commands": [Command.encode(c) for c in self._queued_commands]
         }
 
@@ -156,7 +156,7 @@ class ProvenanceClientHandler(BaseRequestHandler):
         return self._sent_commands
 
     @property
-    def get_last_active(self):
+    def last_active(self):
         # TODO: change to be datetime object not string
         # TODO: and convert encode
         if not self._last_active:
@@ -170,11 +170,11 @@ class ProvenanceClientHandler(BaseRequestHandler):
         return self._command_count
 
     @property
-    def get_hostname(self):
+    def hostname(self):
         return self._hostname
 
     @property
-    def get_ip(self):
+    def ip(self):
         if not self.client_address:
             return None
         return self.client_address[0]

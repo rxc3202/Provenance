@@ -47,7 +47,6 @@ class ProvenanceServer(UDPServer):
 					self.add_host(ip=h[0], hostname=h[1], handler=h[2])
 				self.whitelist.add(h[0])
 
-
 	@staticmethod
 	def _ip_in(ip, ip_list):
 		if ip not in ip_list:
@@ -166,7 +165,7 @@ class ProvenanceServer(UDPServer):
 
 	def get_machine_info(self, host):
 		host = self.machines[host]
-		return ClientInfo(host.beacon_type, host.get_hostname, host.get_ip, host.get_last_active, host.queued_commands)
+		return ClientInfo(host.beacon_type, host.hostname, host.ip, host.last_active, host.queued_commands)
 
 	def get_queued_commands(self, host):
 		machine = self.machines[host]
@@ -193,7 +192,7 @@ class ProvenanceServer(UDPServer):
 
 	def get_hostname(self, ip):
 		machine = self.machines[ip]
-		return machine.get_hostname()
+		return machine.hostname
 
 
 class ThreadedProvenanceServer(ProvenanceServer, ModelInterface):

@@ -5,8 +5,16 @@ from controllers.intefaces.model import ModelInterface
 class ModelController(object):
 
     def __init__(self, server):
+        """ The underlying model from which we are querying information"""
         self._server: ModelInterface = server
+        """ The current selected machine to display extended information"""
         self._current_machine = None
+        """ The machines that are being displayed on the UI"""
+        self._displayed_machines = set()
+        """ The filter that determines the display machines"""
+        self._filter = None
+        """ The amount of times in seconds the controller will query info from the server """
+        self._refresh_interval = 2
 
     # Backend Commands
     @property
@@ -21,6 +29,18 @@ class ModelController(object):
             self._current_machine = ip
         else:
             self._current_machine = None
+
+    @property
+    def displayed_machines(self):
+        machine_info = []
+        # add a filter to this to change it
+        self._displayed_machines = self._server.get_hosts()
+        for ip in self._displayed_machines:
+            info = self.get_machine_info(ip)
+            next_command = info.commands[0].command if info.commands else "N/A"
+            tup = (info.beacon, info.hostname, info.ip, info.active, next_command)
+            machine_info.append(tup)
+        return machine_info
 
     # ===========================================
     # Global Server Functions

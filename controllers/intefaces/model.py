@@ -111,4 +111,13 @@ class ModelInterface(ABC):
         """
         raise NotImplementedError("backup() must be implemented in concrete subclass")
 
+    @abstractmethod
+    def restore(self, file):
+        """
+        Backup the machine to a file using JSON-like format
+        :param file: the filename holding the JSON backup info created by backup()
+        :return: None
+        """
+        raise NotImplementedError("restore() must be implemented in concrete subclass")
+
 
