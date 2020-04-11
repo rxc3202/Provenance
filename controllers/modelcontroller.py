@@ -20,10 +20,8 @@ class ModelController(object):
         self._refresh_interval = 2
 
         for ip in self._server.get_hosts():
-            info = self.get_machine_info(ip)
-            next_command = info.commands[0].command if info.commands else "N/A"
-            tup = (info.beacon, info.hostname, info.ip, info.active, next_command)
-            self._displayed_machines.append(tup)
+            m = self._server.get_machine(ip)
+            self._displayed_machines.append(m)
 
     # Backend Commands
     @property
@@ -61,7 +59,14 @@ class ModelController(object):
         by the UI
         :return: a list of tuples
         """
-        return self._displayed_machines
+        self._update_hosts()
+        displayed_info = []
+        for m in self._displayed_machines:
+            info = self.get_machine_info(m.ip)
+            next_command = info.commands[0].command if info.commands else "N/A"
+            tup = (info.beacon, info.hostname, info.ip, info.active, next_command)
+            displayed_info.append(tup)
+        return displayed_info
 
     @property
     def filters(self):
@@ -104,6 +109,12 @@ class ModelController(object):
                     if ip_address(ip) == y:
                         return True
 
+        def active_helper(m, f):
+            if m.active == "N/A":
+                return False
+            else:
+                return int(m.active) <= int(f)
+
         # Generate the new filters
         self._filters = []
         if new_filter["ips"]:
@@ -113,8 +124,11 @@ class ModelController(object):
         if new_filter["beacon"]:
             self._filters.append(lambda x: (x.beacon == new_filter["beacon"]) or new_filter["beacon"] is None)
         if new_filter["active"]:
-            self._filters.append(lambda x: int(x.active) <= int(new_filter["active"]))
+            self._filters.append(lambda x: active_helper(x, new_filter["active"]))
 
+        self._update_hosts()
+
+    def _update_hosts(self):
         # Apply the filters to the hosts that are being displayed
         new_displayed_machines = []
         for ip in self._server.get_hosts():
@@ -125,9 +139,8 @@ class ModelController(object):
             if not all(res):
                 continue
             # If there are no changes to the filters or the machine passed the test then add it
-            next_command = info.commands[0].command if info.commands else "N/A"
-            tup = (info.beacon, info.hostname, info.ip, info.active, next_command)
-            new_displayed_machines.append(tup)
+            m = self._server.get_machine(ip)
+            new_displayed_machines.append(m)
         self._displayed_machines = new_displayed_machines
 
         # TODO: do intelligent clearing. If a filter hasn't changed then dont clear it
@@ -220,9 +233,9 @@ class ModelController(object):
         :param ip: the ip of the host
         :return: a string representing the hostname else N/A
         """
-        info = self._server.get_machine_info(ip)
-        if info.hostname:
-            return info.hostname
+        info = self._server.get_hostname(ip)
+        if info:
+            return info
         return "N/A"
 
     def get_last_active(self, ip: str):
@@ -231,10 +244,21 @@ class ModelController(object):
         :param ip: the ip of the host to check
         :return: a string in minutes
         """
-        info = self._server.get_machine_info(ip)
-        if info.active is not None:
-            return f"{info.active}m"
+        info = self._server.get_last_active(ip)
+        if info is not None:
+            return f"{info}m"
         return "N/A"
+
+    def get_beacon_type(self, ip: str):
+        """
+        Get the type of beacon the ip is using
+        :param ip: the ip address as a string
+        :return: a string of "DNS", "ICMP", "HTTP", etc
+        """
+        info = self._server.get_beacon(ip)
+        if info is not None:
+            return info
+        return "Not Set"
 
     def get_machine_info(self, ip: str):
         """
@@ -242,6 +266,5 @@ class ModelController(object):
         :param ip: the IP of the machine to get the details for
         :return: a ClientInfo namedtuple
         """
-        info = self._server.get_machine_info(ip)
-        # TODO: fix this janky stuff
-        return ClientInfo(info.beacon, info.hostname, info.ip, self.get_last_active(ip), info.commands)
+        return ClientInfo(self.get_beacon_type(ip), self.get_hostname(ip),
+                          ip, self.get_last_active(ip), self.get_queued_commands(ip))

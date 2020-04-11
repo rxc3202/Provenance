@@ -12,6 +12,27 @@ class ModelInterface(ABC):
         raise NotImplementedError("shutdown() must be implemented in concrete subclass")
 
     @abstractmethod
+    def backup(self):
+        """
+        Backup the machine to a file using JSON-like format
+        :return: None
+        """
+        raise NotImplementedError("backup() must be implemented in concrete subclass")
+
+    @abstractmethod
+    def restore(self, file):
+        """
+        Backup the machine to a file using JSON-like format
+        :param file: the filename holding the JSON backup info created by backup()
+        :return: None
+        """
+        raise NotImplementedError("restore() must be implemented in concrete subclass")
+
+    # ===========================================
+    # Interaction Server Functions
+    # ===========================================
+
+    @abstractmethod
     def get_hosts(self):
         """
         Get all the IP addresses that are currently being tracked
@@ -44,9 +65,10 @@ class ModelInterface(ABC):
     # ===========================================
 
     @abstractmethod
-    def queue_command(self, ctype, ip, command):
+    def queue_command(self, ctype: str, ip: str, command: str):
         """
         Queue a single command on the given host
+        :param ctype: the type of the command as a string
         :param ip: the IP of the host
         :param command: the powershell command to add
         :return: None
@@ -54,7 +76,7 @@ class ModelInterface(ABC):
         raise NotImplementedError("queued_command() must be implemented in concrete subclass")
 
     @abstractmethod
-    def remove_command(self, ip, cmd_id):
+    def remove_command(self, ip: str, cmd_id):
         """
         Remove a single command on the given host
         :param ip: the IP of the host
@@ -64,7 +86,7 @@ class ModelInterface(ABC):
         raise NotImplementedError("remove_command() must be implemented in concrete subclass")
 
     @abstractmethod
-    def get_hostname(self, ip):
+    def get_hostname(self, ip: str):
         """
         Get the hostname of a given IP address
         :param ip: the ip of the host
@@ -73,7 +95,7 @@ class ModelInterface(ABC):
         raise NotImplementedError("get_hostname() must be implemented in concrete subclass")
 
     @abstractmethod
-    def get_queued_commands(self, ip):
+    def get_queued_commands(self, ip: str):
         """
         Get the queued commands for a given IP address
         :param ip: the string IP address of the machine
@@ -82,7 +104,7 @@ class ModelInterface(ABC):
         raise NotImplementedError("get_queued_commands() must be implemented in concrete subclass")
 
     @abstractmethod
-    def get_sent_commands(self, ip):
+    def get_sent_commands(self, ip: str):
         """
         Get the queued commands for a given IP address
         :param ip: the string IP address of the machine
@@ -91,7 +113,7 @@ class ModelInterface(ABC):
         raise NotImplementedError("get_sent_commands() must be implemented in concrete subclass")
 
     @abstractmethod
-    def get_last_active(self, ip):
+    def get_last_active(self, ip: str):
         """
         Get the last known time the client beaconed out to Provenance
         :param ip: the ip of the host to check
@@ -100,24 +122,30 @@ class ModelInterface(ABC):
         raise NotImplementedError("get_last_active() must be implemented in concrete subclass")
 
     @abstractmethod
-    def get_machine_info(self, ip):
-        raise NotImplementedError("get_machine_info() must be implemented in concrete subclass")
+    def get_beacon(self, ip: str):
+        """
+        Get the type of beacon being used by the host
+        :param ip: the ip
+        :return: a string representing the beacon type
+        """
+        raise NotImplementedError("get_beacon() must be implemented in concrete subclass")
 
     @abstractmethod
-    def backup(self):
+    def get_os(self, ip: str):
         """
-        Backup the machine to a file using JSON-like format
-        :return: None
+        Get the os of the machine in question
+        :param ip: the string representing the IP
+        :return: a string reprsenting the OS
         """
-        raise NotImplementedError("backup() must be implemented in concrete subclass")
+        raise NotImplementedError("get_beacon() must be implemented in concrete subclass")
 
     @abstractmethod
-    def restore(self, file):
+    def get_machine(self, ip: str):
         """
-        Backup the machine to a file using JSON-like format
-        :param file: the filename holding the JSON backup info created by backup()
-        :return: None
+        Get the actual Provenance client instance
+        :param ip: the string of the ip
+        :return:
         """
-        raise NotImplementedError("restore() must be implemented in concrete subclass")
+        raise NotImplementedError("get_machine() must be implemented in concrete subclass")
 
 

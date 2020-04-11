@@ -12,7 +12,7 @@ from ipaddress import ip_network, ip_address, \
     IPv4Address, IPv4Network, IPv6Address, IPv6Network
 
 
-class ProvenanceServer(UDPServer):
+class ProvenanceServer(UDPServer, ModelInterface):
     """
     An implementation :module: socketserver.UDPServer used
     to interact with various beacons. The methods defined
@@ -163,13 +163,9 @@ class ProvenanceServer(UDPServer):
             return new_handler
         return None
 
-    def get_machine_info(self, host):
-        host = self.machines[host]
-        return ClientInfo(host.beacon_type, host.hostname, host.ip, host.last_active, host.queued_commands)
-
     def get_queued_commands(self, host):
         machine = self.machines[host]
-        return machine.get_queued_commands()
+        return machine.queued_commands
 
     def get_sent_commands(self, host):
         machine = self.machines[host]
@@ -194,8 +190,19 @@ class ProvenanceServer(UDPServer):
         machine = self.machines[ip]
         return machine.hostname
 
+    def get_beacon(self, ip):
+        machine = self.machines[ip]
+        return machine.beacon
 
-class ThreadedProvenanceServer(ProvenanceServer, ModelInterface):
+    def get_os(self, ip):
+        machine = self.machines[ip]
+        return machine.os
+
+    def get_machine(self, ip: str):
+        return self.machines[ip]
+
+
+class ThreadedProvenanceServer(ProvenanceServer):
     """ A Threaded version of the Provenance server """
 
     # Decides how threads will act upon termination of the
