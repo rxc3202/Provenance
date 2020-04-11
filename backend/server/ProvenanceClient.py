@@ -55,17 +55,18 @@ class ProvenanceClientHandler(BaseRequestHandler):
         self._hostname = hostname
         self.client_address = (ip, None)
         self._last_active = None
-        for c in commands:
-            self.queue_command(
-                ctype=c["type"],
-                cmd=c["command"]
-            )
-        # TODO: change uid to not numbers so we don't have to update UID to correct value
-        self._command_count = int(commands[-1]["uid"])
+        if commands:
+            for c in commands:
+                self.queue_command(
+                    ctype=c["type"],
+                    cmd=c["command"]
+                )
+            # TODO: change uid to not numbers so we don't have to update UID to correct value
+            self._command_count = int(commands[-1]["uid"])
 
     def encode(self):
         return {
-            "beacon": self.beacon_type,
+            "beacon": self.beacon,
             "hostname": self._hostname,
             "ip": self.ip,
             "active": self.last_active,

@@ -32,7 +32,7 @@ class ProvenanceCLI(object):
                 Scene([AddCommandMenu(screen, cls.model, cls.ui)], -1, name="Add Command"),
                 Scene([SettingsMenu(screen, cls.model, cls.logger, cls.ui)], -1, name="Settings")
             ]
-            screen.play(scenes, stop_on_resize=False, start_scene=scene)
+            screen.play(scenes, stop_on_resize=True, start_scene=scene)
 
         while True:
             try:
@@ -40,6 +40,3 @@ class ProvenanceCLI(object):
                 sys.exit(0)
             except ResizeScreenError as e:
                 cls.last_scene = e.scene
-                # Screen resizing is generally corrupts asciimatics drawing
-                # Create a backup so we can reload
-                cls.model.backup()

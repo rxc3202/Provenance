@@ -31,19 +31,20 @@ class ProvenanceServer(UDPServer, ModelInterface):
         if restore:
             self.logger.critical(f"Restoring backup from {restore[0]}")
             self.restore(restore[0])
+        else:
+            # Get the list of IPs we're supposed to interact with
+            if not discovery:
+                # via the whitelist argument
+                if whitelist:
+                    hosts = parse_whitelist(whitelist)
+                else:
+                    # or manually by command line (eww)
+                    hosts = get_whitelist()
+                for h in hosts:
+                    if '/' not in h[0]:
+                        self.add_host(ip=h[0], hostname=h[1], handler=h[2])
+                    self.whitelist.add(h[0])
 
-        # Get the list of IPs we're supposed to interact with
-        if not discovery:
-            # via the whitelist argument
-            if whitelist:
-                hosts = parse_whitelist(whitelist)
-            else:
-                # or manually by command line (eww)
-                hosts = get_whitelist()
-            for h in hosts:
-                if '/' not in h[0]:
-                    self.add_host(ip=h[0], hostname=h[1], handler=h[2])
-                self.whitelist.add(h[0])
 
     @staticmethod
     def _ip_in(ip, ip_list):
