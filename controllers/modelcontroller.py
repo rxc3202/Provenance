@@ -28,12 +28,27 @@ class ModelController(object):
     # Backend Commands
     @property
     def current_machine(self):
+        """
+        Get the ProvenanceClient instance that is currently selected in the UI
+        :return: a ProvenanceClient instance
+        """
         return self._current_machine
 
     def reset_current(self):
+        """
+        Reset the current value of _current_machine to None. Effectively saying
+        that there is no currenlty selected machine in focus
+        :return: None
+        """
         self._current_machine = None
 
-    def select_current(self, ip):
+    def select_current(self, ip: str):
+        """
+        Set the currently selected machine to the ip if it is being tracked
+        by the server
+        :param ip: the ip to add as a string
+        :return:
+        """
         if ip in self._server.get_hosts():
             self._current_machine = ip
         else:
@@ -41,14 +56,39 @@ class ModelController(object):
 
     @property
     def displayed_machines(self):
+        """
+        Get the ClientInfo tuples of the machines that should be displayed
+        by the UI
+        :return: a list of tuples
+        """
         return self._displayed_machines
 
     @property
     def filters(self):
+        """
+        Return the filter functions used to filter the hosts
+        :return: a list of lambdas
+        """
         return self._filters
 
     @filters.setter
     def filters(self, new_filter: dict):
+        """
+        Set a new filter for the hosts that will be given to the UI. The input
+        is a dictionary containing the keys:
+                ["ips", "hostname", "beacon", "active"]
+        which filter on the attributes given in ProvenanceClient.
+
+        Accepted Values:
+            ips - is a string of CIDR IPs/subnets delimited by a comma
+            hostname - a python3 valid regex
+            beacon - a string representing the type of beacon to filter for
+            active - a string of an int denoting that all beacons that have been
+                     active within this amount of time are shown
+
+        :param new_filter: a dictionary containing values
+        :return: None
+        """
         expected_values = {"ips", "hostname", "beacon", "active"}
         if expected_values != set(new_filter.keys()):
             raise ValueError(f"modelcontoller.filter must contain values: {expected_values}")
@@ -66,22 +106,13 @@ class ModelController(object):
 
         # Generate the new filters
         self._filters = []
-        filters_changed = False
         if new_filter["ips"]:
-            filters_changed = True
-            print("ips filter added")
             self._filters.append(lambda x: ip_helper(x.ip, new_filter["ips"]))
         if new_filter["hostname"]:
-            filters_changed = True
-            print("hostname filter added")
             self._filters.append(lambda x: re.compile(new_filter["hostname"]).search(x.hostname) is not None)
         if new_filter["beacon"]:
-            filters_changed = True
-            print("beacon filter added")
             self._filters.append(lambda x: (x.beacon == new_filter["beacon"]) or new_filter["beacon"] is None)
         if new_filter["active"]:
-            filters_changed = True
-            print("active filter added")
             self._filters.append(lambda x: int(x.active) <= int(new_filter["active"]))
 
         # Apply the filters to the hosts that are being displayed
@@ -89,11 +120,10 @@ class ModelController(object):
         for ip in self._server.get_hosts():
             info = self.get_machine_info(ip)
             # Only if the users has set new filters
-            if filters_changed:
-                # Check if the machine passes all filters
-                res = [f(info) for f in self._filters]
-                if not all(res):
-                    continue
+            # Check if the machine passes all filters
+            res = [f(info) for f in self._filters]
+            if not all(res):
+                continue
             # If there are no changes to the filters or the machine passed the test then add it
             next_command = info.commands[0].command if info.commands else "N/A"
             tup = (info.beacon, info.hostname, info.ip, info.active, next_command)
@@ -107,9 +137,17 @@ class ModelController(object):
     # ===========================================
 
     def backup(self):
+        """
+        Tell the server to create a backup of itself to be restored latter
+        :return: None
+        """
         self._server.backup()
 
     def shutdown(self):
+        """
+        Shutdown the server using its shutdown method
+        :return: None
+        """
         self._server.shutdown()
 
     def get_hosts(self):
@@ -119,7 +157,7 @@ class ModelController(object):
         """
         return self._server.get_hosts()
 
-    def remove_host(self, ip):
+    def remove_host(self, ip: str):
         """
         Remove a host from the C2 Server. The server will no longer send
         commands to that host
@@ -128,11 +166,11 @@ class ModelController(object):
         """
         pass
 
-    def add_host(self, ip, **kwargs):
+    def add_host(self, ip: str, **kwargs):
         """
         Add a host to the C2 Server. The server will attempt to send commands
         to the host
-        :param ip:
+        :param ip: the ip to track on the server
         :return: None
         """
         return self._server.add_host(ip, **kwargs)
@@ -141,16 +179,17 @@ class ModelController(object):
     # Host Specific Commands
     # ===========================================
 
-    def queue_command(self, ctype, ip, command):
+    def queue_command(self, ctype: str, ip: str, command: str):
         """
         Queue a single command on the given host
+        :param ctype: a string of "ps", "bash", "cmd", or "nop"
         :param ip: the IP of the host
-        :param command: the powershell command to add
+        :param command: the command to add
         :return: None
         """
         self._server.queue_command(ctype, ip, command)
 
-    def remove_command(self, ip, cmd_id):
+    def remove_command(self, ip: str, cmd_id):
         """
         Remove a single command on the given host
         :param ip: the IP of the host
@@ -159,7 +198,7 @@ class ModelController(object):
         """
         self._server.remove_command(ip, cmd_id)
 
-    def get_queued_commands(self, ip):
+    def get_queued_commands(self, ip: str):
         """
         Get the queued commands for a given IP address
         :param ip: the string IP address of the machine
@@ -167,10 +206,15 @@ class ModelController(object):
         """
         return self._server.get_queued_commands(ip)
 
-    def get_sent_commands(self, ip):
+    def get_sent_commands(self, ip: str):
+        """
+        Get all the commands sent for the server
+        :param ip:
+        :return:
+        """
         return self._server.get_sent_commands(ip)
 
-    def get_hostname(self, ip):
+    def get_hostname(self, ip: str):
         """
         Get the hostname of a given IP address
         :param ip: the ip of the host
@@ -181,7 +225,7 @@ class ModelController(object):
             return info.hostname
         return "N/A"
 
-    def get_last_active(self, ip):
+    def get_last_active(self, ip: str):
         """
         Get the last known time the client beaconed out to Provenance
         :param ip: the ip of the host to check
@@ -192,7 +236,12 @@ class ModelController(object):
             return f"{info.active}m"
         return "N/A"
 
-    def get_machine_info(self, ip):
+    def get_machine_info(self, ip: str):
+        """
+        Return the information that the UI will be displaying wrapped up in a tuple
+        :param ip: the IP of the machine to get the details for
+        :return: a ClientInfo namedtuple
+        """
         info = self._server.get_machine_info(ip)
         # TODO: fix this janky stuff
         return ClientInfo(info.beacon, info.hostname, info.ip, self.get_last_active(ip), info.commands)

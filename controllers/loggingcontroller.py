@@ -4,6 +4,11 @@ import os
 
 
 class LoggingController(object):
+    """
+    A controller class that will be a intermediary between the UI and the
+    model
+    """
+
     logfile_date_format = "%Y-%m-%d %H:%M:%S"
     ui_date_format = "%H:%M:%S"
 
@@ -51,20 +56,37 @@ class LoggingController(object):
         return record_factory
 
     def get_messages(self):
+        """
+        Get the newest logger messages as strings
+        :return: a list of messages
+        """
         records = self._filter.records
         return [f"{r.creation_time.strftime(self.ui_date_format)} [{r.levelname}] {r.msg}" for r in records]
 
     @property
     def log_level(self):
+        """
+        get the log level of the logger
+        :return: an integer from logger module representing "Info", "Debug", "Warning", "Critical"
+        """
         return self._log_level
 
     @log_level.setter
-    def log_level(self, level):
+    def log_level(self, level: int):
+        """
+        Set the log level to display in the logsfile and the UI
+        :param level: an integer specified by the python logging module
+        :return: None
+        """
         self._log_level = level
         self._logger.setLevel(level)
 
 
 class ProvenanceLoggingFilter(logging.Filter):
+    """
+    A logging.Filter subclass that acts a hook for the logging module allowing
+    intercept of messages.
+    """
     _last_time = datetime.now()
 
     def __init__(self):
@@ -87,6 +109,11 @@ class ProvenanceLoggingFilter(logging.Filter):
 
     @property
     def records(self):
+        """
+        Get the records of the logger and then clear the current list
+        so that no repeats are fetched
+        :return: a list of logging.LogRecord instances
+        """
         records = self._records.copy()
         self._records.clear()
         return records
