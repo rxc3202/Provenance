@@ -4,20 +4,6 @@ import logging
 from util.structs import Command
 
 
-class Commands(Enum):
-    """ The types of commands that can be on the victim
-
-    * NOP = Do nothing
-    * POWERSHELL = Run something in powershell
-    * CMD = Run Something in cmd
-
-    """
-    NOP = 0
-    PS = 1
-    CMD = 2
-    BASH = 3
-
-
 class ProtocolHandler(ABC):
     """
     An abstract class that defines the methods that need
