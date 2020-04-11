@@ -112,7 +112,8 @@ class AddCommandMenu(Frame):
             valid_ips = tracked_ips.intersection(input_ips)
             for subnet in input_subnets:
                 subnet_ips = set([str(h) for h in subnet.hosts()])
-                valid_ips.union(subnet_ips.intersection(tracked_ips))
+                valid_ips = valid_ips.union(subnet_ips.intersection(tracked_ips))
+            #TODO: fix, this is really slow when adding to like 70 hosts
             for ip in valid_ips:
                 for command in self.data["commands"]:
                     # check for empty string
