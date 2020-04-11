@@ -29,7 +29,7 @@ class MainMenu(Frame):
         # Init all widgets
         self._machine_list_widget = self._init_machine_list_widget()
         self._add_host_button = Button("Add Host", self._add_host)
-        self._rem_host_button = Button("Remove Host", self._remove_host)
+        # self._rem_host_button = Button("Remove Host", self._remove_host)
         self._add_cmd_button = Button("Add CMD", self._add_command)
         self._rem_cmd_button = Button("Settings", self._options_command)
         self._refresh_button = Button("Create Backup", self._refresh)
@@ -41,14 +41,14 @@ class MainMenu(Frame):
         details_layout.add_widget(self._machine_list_widget)
         details_layout.add_widget(Divider())
 
-        button_layout = Layout([1, 1, 1, 1, 1, 1])
+        button_layout = Layout([1, 1, 1, 1, 1])
         self.add_layout(button_layout)
         button_layout.add_widget(self._refresh_button, 0)
         button_layout.add_widget(self._add_host_button, 1)
-        button_layout.add_widget(self._rem_host_button, 2)
-        button_layout.add_widget(self._add_cmd_button, 3)
-        button_layout.add_widget(self._rem_cmd_button, 4)
-        button_layout.add_widget(self._exit_button, 5)
+        # button_layout.add_widget(self._rem_host_button, 2)
+        button_layout.add_widget(self._add_cmd_button, 2)
+        button_layout.add_widget(self._rem_cmd_button, 3)
+        button_layout.add_widget(self._exit_button, 4)
 
         self._details_layout = details_layout
         self._button_layout = button_layout

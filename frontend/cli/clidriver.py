@@ -40,3 +40,6 @@ class ProvenanceCLI(object):
                 sys.exit(0)
             except ResizeScreenError as e:
                 cls.last_scene = e.scene
+                # Screen resizing is generally corrupts asciimatics drawing
+                # Create a backup so we can reload
+                cls.model.backup()
