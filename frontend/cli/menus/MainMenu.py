@@ -60,10 +60,12 @@ class MainMenu(Frame):
     def _init_machine_list_widget(self):
         machines = self.model.displayed_machines
 
-        fields = ["Type", "Hostname", "IP", "Last Active", "Next Command"]
+        fields = ["Type", "OS", "Hostname", "IP", "Last Active", "Next Command"]
+        widths = ["<10%", "<10%", "<25%", "<15%", "<10%", "<30%"]
+        # old = [f"<{100 // len(fields)}%" for _ in fields]
         return MultiColumnListBox(
             height=Widget.FILL_FRAME,
-            columns=[f"<{100 // len(fields)}%" for _ in fields],
+            columns=widths,
             options=[(x, i) for i, x in enumerate(machines)],
             titles=fields,
             add_scroll_bar=True,
@@ -148,7 +150,7 @@ class MainMenu(Frame):
 
 
 class FilterMenu(Frame):
-    reset_data = {"beacon": None, "ips": '', "active": '', "hostname": ''}
+    reset_data = {"beacon": None, "ips": '', "active": '', "hostname": '', "os": None}
 
     def __init__(self, screen, model: ModelController, ui: UIController):
         super(FilterMenu, self).__init__(screen,
@@ -168,8 +170,10 @@ class FilterMenu(Frame):
         self._apply_button = Button("Apply", on_click=self._apply, add_box=True)
         self._beacon_header = Text(disabled=True)
         self._beacon_header.value = "Beacon Type: "
-        self._beacon_type = DropdownList([("All", None), ("DNS", "DNS"), ("HTTP", "HTTP"), ("ICMP", "ICMP")],
-                                         name="beacon")
+        self._beacon_type = DropdownList(
+            [("All", None), ("DNS", "DNS"), ("HTTP", "HTTP"), ("ICMP", "ICMP")],
+            name="beacon"
+        )
 
         self._active_header = Text(disabled=True)
         self._active_header.value = "Last Active (in minutes): "
@@ -183,6 +187,13 @@ class FilterMenu(Frame):
         self._hostname_header.value = "Hostname: "
         self._hostname_input = Text(name="hostname")
 
+        self._os_header = Text(disabled=True)
+        self._os_header.value = "OS: "
+        self._os_input = DropdownList(
+            [("All", None), ("Linux", "linux"), ("Windows", "windows")],
+            name="os"
+        )
+
         self._filler = TextBox(Widget.FILL_FRAME, disabled=True)
         # Default values
         self._active_field.value = None
@@ -193,6 +204,8 @@ class FilterMenu(Frame):
         self.add_layout(layout)
         layout.add_widget(self._beacon_header)
         layout.add_widget(self._beacon_type)
+        layout.add_widget(self._os_header)
+        layout.add_widget(self._os_input)
         layout.add_widget(self._active_header)
         layout.add_widget(self._active_field)
         layout.add_widget(self._ip_header)

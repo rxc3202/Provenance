@@ -15,7 +15,8 @@ class ProvenanceClientHandler(BaseRequestHandler):
 
     """ Builtin Functions"""
 
-    def __init__(self, request, client_address, serverinfo, handler="DNS", hostname=None, commands=None):
+    def __init__(self, request, client_address, serverinfo, handler="DNS", hostname=None,
+                 os="Windows", commands=None):
         # Superclass initialization
         self.request = request
         self.client_address = client_address
@@ -23,7 +24,7 @@ class ProvenanceClientHandler(BaseRequestHandler):
 
         # Subclass Initialization
         self._hostname = hostname or f"Client_{ProvenanceClientHandler._client_count}"
-        self._os = None
+        self._os = os
         self._queued_commands = deque()
         self._sent_commands = []
         self._command_count = 0
@@ -46,12 +47,14 @@ class ProvenanceClientHandler(BaseRequestHandler):
 
     def decode(self, data):
         beacon = data["beacon"]
+        os = data["os"]
         hostname = data["hostname"]
         ip = data["ip"]
         commands = data["commands"]
 
         beacon_handler = ProvenanceClientHandler.beacon_types[beacon]
         self._protocol_handler = beacon_handler(ip, None)
+        self._os = os
         self._hostname = hostname
         self.client_address = (ip, None)
         self._last_active = None
@@ -67,6 +70,7 @@ class ProvenanceClientHandler(BaseRequestHandler):
     def encode(self):
         return {
             "beacon": self.beacon,
+            "os": self.os,
             "hostname": self._hostname,
             "ip": self.ip,
             "active": self.last_active,
@@ -145,7 +149,7 @@ class ProvenanceClientHandler(BaseRequestHandler):
 
     @property
     def os(self):
-        return self.os
+        return self._os
 
     @property
     def queued_commands(self):

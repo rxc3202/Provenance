@@ -64,7 +64,7 @@ class ModelController(object):
         for m in self._displayed_machines:
             info = self.get_machine_info(m.ip)
             next_command = info.commands[0].command if info.commands else "N/A"
-            tup = (info.beacon, info.hostname, info.ip, info.active, next_command)
+            tup = (info.beacon, info.os, info.hostname, info.ip, info.active, next_command)
             displayed_info.append(tup)
         return displayed_info
 
@@ -94,7 +94,7 @@ class ModelController(object):
         :param new_filter: a dictionary containing values
         :return: None
         """
-        expected_values = {"ips", "hostname", "beacon", "active"}
+        expected_values = {"ips", "hostname", "beacon", "active", "os"}
         if expected_values != set(new_filter.keys()):
             raise ValueError(f"modelcontoller.filter must contain values: {expected_values}")
 
@@ -125,6 +125,8 @@ class ModelController(object):
             self._filters.append(lambda x: (x.beacon == new_filter["beacon"]) or new_filter["beacon"] is None)
         if new_filter["active"]:
             self._filters.append(lambda x: active_helper(x, new_filter["active"]))
+        if new_filter["os"]:
+            self._filters.append(lambda x: (x.beacon == new_filter["os"]) or new_filter["os"] is None)
 
         self._update_hosts()
 
@@ -260,11 +262,17 @@ class ModelController(object):
             return info
         return "Not Set"
 
+    def get_os(self, ip: str):
+        info = self._server.get_os(ip)
+        if info is not None:
+            return info
+        return "N/A"
+
     def get_machine_info(self, ip: str):
         """
         Return the information that the UI will be displaying wrapped up in a tuple
         :param ip: the IP of the machine to get the details for
         :return: a ClientInfo namedtuple
         """
-        return ClientInfo(self.get_beacon_type(ip), self.get_hostname(ip),
+        return ClientInfo(self.get_beacon_type(ip), self.get_os(ip), self.get_hostname(ip),
                           ip, self.get_last_active(ip), self.get_queued_commands(ip))
