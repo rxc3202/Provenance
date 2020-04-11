@@ -1,4 +1,4 @@
-from asciimatics.widgets import Frame, ListBox, Layout, Divider, Text, \
+from asciimatics.widgets import Frame, Layout, Divider, Text, \
     Button, TextBox, Widget, RadioButtons, PopUpDialog
 from asciimatics.exceptions import NextScene
 from ipaddress import IPv4Network, IPv4Address

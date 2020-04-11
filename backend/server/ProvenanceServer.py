@@ -2,12 +2,10 @@ import logging
 import threading
 from socketserver import UDPServer
 from util import parse_whitelist, get_whitelist
-from util.structs import ClientInfo
 from controllers.intefaces.model import ModelInterface
 import json
 from datetime import datetime
 import os.path
-from backend.server.ProvenanceClient import ProvenanceClientHandler
 from ipaddress import ip_network, ip_address, \
     IPv4Address, IPv4Network, IPv6Address, IPv6Network
 

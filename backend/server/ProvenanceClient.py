@@ -1,5 +1,4 @@
 from socketserver import BaseRequestHandler
-from backend.handlers.protocolhandler import ProtocolHandler
 from backend.handlers.dns import DNSHandler
 from datetime import datetime
 from util.structs import CommandType, Command
