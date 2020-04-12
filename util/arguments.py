@@ -56,12 +56,19 @@ def verbosity(level):
 
 def parse_whitelist(filename):
     hosts = []
+    c = 1
     with open(filename, 'r') as file:
         for line in file:
-            if '#' in line:
+            line = line.strip()
+            c += 1
+            if '#' in line or line == '':
                 continue
-            line = line.strip().split(':')
-            hosts.append((line[0], line[1], line[2]))
+            try:
+                fields = line.split(':')
+                hosts.append((fields[0], fields[1], fields[2]))
+            except IndexError:
+                print(f"Formatting error on line: {c}({line})")
+                exit(1)
     return hosts
 
 
