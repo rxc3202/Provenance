@@ -1,4 +1,4 @@
-#Provenance Command and Control
+# Provenance Command and Control
 
 Provenance is a Command and Control server used to distribute commands
 across different Redteam beacons in order to create a centralized monitoring platform.
