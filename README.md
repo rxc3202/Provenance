@@ -3,7 +3,7 @@
 Provenance is a Command and Control server used to distribute commands
 across different Redteam beacons in order to create a centralized monitoring platform.
 
-#### Why?
+#### Purpose
 Provenance is personal project used in conjunction with the following beacons in order
 to teach myself more about redteaming, malware, evasion and persistence tactics on Windows
 and Linux operating systems. Also, I love development :)
@@ -14,7 +14,14 @@ and Linux operating systems. Also, I love development :)
 |  ?            | ICMP          | future project    | future project |
 |  ?            | HTTP          | future project    | future project |
 
-#### Installation
+#### Disclaimer
+This project and the beacons above are meant to be a Proof of Concept and should not be used in any real-world
+environment. They are meant for educational use inside controlled environments such as your own homelab, classes
+(where you have permission), or competition environments. Any illegal use of Provenance and it's related beacons
+outside strictly controlled environments **IS NOT CONDONED** and is more often than not **ILLEGAL**.
+Please be smart and responsible.
+
+## Installation
 Provenance supports python3 on both Windows and Linux. More specifically,
 it is being developed primarily on 3.7.7
 
@@ -39,44 +46,65 @@ pip3 install -r requirements.txt
 ## Design and Architecture
 During development I tried to adhere as best as I could remember to good,
 software-engineering design patterns in order to make the code more readable and 
-extendable. As such, below will contain as much specification as possible. 
+extendable. As such, below will contain as much specificity as possible. 
 
 #### Directory Structure
 | Directory     | Description                                                           |
 | ------------- | --------------------------------------------------------------------- |
 | `backend`     | Server code and `handlers` for different beacons                      |
-| `controllers` | Clases that provide an abstraction layer between the model and the UI |
+| `controllers` | Classes that provide an abstraction layer between the model and the UI |
 | `frontend`    | Code need to run WebGUI or command line UI                            |
 | `backups`     | Default directory where server backups are stored upon creation       |
 | `logs`        | Default directory where server logs are stored                        |
+| `docs`        | resources for this documentation                                      |
 
-#### Server Architecture
+### Backend Architecture
 ![Server Architecture](docs/server-architecture.png)
 
 The server architecture attempts to follow Model-View-Controller Design pattern and as such
 implements the `ModelController` class which exposes limited functionality to any UI that interacts with it. 
 The `ModelController` is instantiated with a concrete class that inherits from the `ModelInterface`
 class, which defines standard methods for retrieving information from the server. At this moment,
-`ProvenanceServer` or a `ThreadedProvenanceServer` are the define the functionality of serving C2 commands.
+`ProvenanceServer` or a `ThreadedProvenanceServer` define the functionality of serving C2 commands.
 
-Regardless of the type of server, internally they store information about the beaconing machines via
+Regardless of the type of server, internally the server stores information about the beaconing machines via
 multiple `ProvenanceClient` instances. Each instance will independently track the commands that need to be sent to
-it, last beaconing time, etc. However, this class doesn't define the implementation for actually responding
+it, last callback time, etc. However, this class doesn't define the implementation for actually responding
 to requests from beacons.
 
 In order to process each request coming into the server, each `ProvenanceClient` instance must have a valid 
-`protocolhandler`, which will properly define the server's response when handling a request from a beacon via
-the `handle_request()` method that all concrete subclasses must implement. 
+`protocolhandler`, which will properly define the server's response when 
+the server receives a request from the specific `ProvenanceClient`'s IP address. From there, the server
+will call the `ProvenanceClient`'s `handle()` method, which will call the underlying `protocolhandler`'s
+`handle_request()` method, which is left up to the implementer to figure out how to **decode the request**,
+ **figure out the correct response**, and then **encode the command into the acceptable protocol format**.
+(This should be changed in later versions so that the `ProvenanceClient` instance sends a command
+that has been return by `handle_request()`)
 
-#### UI Architecture
+The sequence diagram below depicts the call sequence for the interactions between the `ProvenanceServer` instance
+receiving a `request` and its subsequent handling. _NOTE: `ProvenanceServer` is a subclass of Python's
+`UDPServer` class which dictates the most of the low-level handling of requests_
+![Sequence Diagram for one request](docs/RequestSequenceDiagram.png)
+
+### Frontend Architecture
 The User Interface for Provenance is broken into two implementations: CLI and GUI, which can be specified at launch
 of the program. However, as of right now `v0.5` only the CLI is being worked on due to the parallel process of
 building out beacon and server functionality.
 
-##### Command Line Interface
+#### Command Line Interface
 The command line interface is built on top of a python library [asciimatics](https://github.com/peterbrittain/asciimatics),
 a cross-platform [ncurses](https://en.wikipedia.org/wiki/Ncurses) API that provides predefined "building blocks" for
-creating CLI programs. 
+creating CLI programs. The diagram below demonstrates the dissemination of data from the the server to the UI.
+
+
+![cli architecture image](docs/cli-architecture.png)
+
+When specifying the use of the command line as the UI that Provenance should display to, the Provenance will create a 
+`ProvenanceCLI` instance and populates it's three public fields of `model`, `logger`, `ui` which allow the command line 
+implementation to access data from the server, information about the logs that are being generated from the server, and
+and CLI specific information. Each of these models will be passed to each of the `Menu`'s upon instantiation.
+
+##### CLI Mini Demo
 
 ![MainMenu](docs/mainmenu.PNG)
 
