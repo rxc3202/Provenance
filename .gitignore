@@ -1,0 +1,14 @@
+# Editors
+.vscode/
+.idea/
+
+# Python compilation
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Provenance Related Directories
+c2-env/
+backups/
+logs/
+
