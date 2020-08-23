@@ -10,9 +10,10 @@ and Linux operating systems. Also, I love development :)
 
 | Beacon        | Protocol      | Windows           | Linux     |
 | ------------- |:-------------:| ----------------- | --------- |
-| resolution    | DNS           | in development    | up next   |
+| resolution    | DNS           | in development    | Golang   |
 |  ?            | ICMP          | future project    | future project |
 |  ?            | HTTP          | future project    | future project |
+> NOTE: All new feature development on beacons is currently in Golang due to ease of development and the desire to learn a new language.
 
 #### Disclaimer
 This project and the beacons above are meant to be a Proof of Concept and should not be used in any real-world
@@ -24,6 +25,15 @@ Please be smart and responsible.
 ## Installation
 Provenance supports python3 on both Windows and Linux. More specifically,
 it is being developed primarily on 3.7.7
+
+##### Pipenv
+```bash
+pip install pipenv
+pipenv --three
+pipenv install
+pipenv shell
+python3 Provenance.py -h
+```
 
 ##### Linux
 ```bash
@@ -88,7 +98,7 @@ receiving a `request` and its subsequent handling. _NOTE: `ProvenanceServer` is 
 
 ### Frontend Architecture
 The User Interface for Provenance is broken into two implementations: CLI and GUI, which can be specified at launch
-of the program. However, as of right now `v0.5` only the CLI is being worked on due to the parallel process of
+of the program. However, as of right now `v0.1-alpha` only the CLI is being worked on due to the parallel process of
 building out beacon and server functionality.
 
 #### Command Line Interface
