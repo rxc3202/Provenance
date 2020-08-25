@@ -15,6 +15,7 @@ class ProtocolHandler(ABC):
         self.logger = logging.getLogger("Provenance")
         self._ip = ip
         self._socket = socket
+        self._synchronized = False
 
     @property
     def ip(self):
@@ -23,6 +24,14 @@ class ProtocolHandler(ABC):
     @property
     def socket(self):
         return self._socket
+
+    @property
+    def synchronized(self):
+        return self._synchronized
+    
+    @synchronized.setter
+    def synchronized(self, value: bool):
+        self._synchronized = value
 
     @abstractmethod
     def handle_request(self, raw_request, port: int, cmd: Command):
@@ -36,3 +45,14 @@ class ProtocolHandler(ABC):
         :return: None
         """
         raise NotImplementedError("handle_request() not implemented in subclass.")
+
+    @abstractmethod
+    def synchronize(self, raw_request, port: int) -> (str,str):
+        """
+        A method that handles the initial synchronization between Provenance and
+        the beacon to establish OS and hostname information. This acts as an 
+        acknolwedgement for the client and Provenance so that communication can start
+        :param raw_request: the request found in :module: socketserver.UDPserver
+        :return: A tuple containing the operating system and hostname of the client
+        """
+        raise NotImplementedError("syncrhonize() not implemented in subclass.")

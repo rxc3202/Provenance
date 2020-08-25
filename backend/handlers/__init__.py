@@ -1,2 +1,2 @@
-from . import dns
+from . import resolution
 from . import protocolhandler

