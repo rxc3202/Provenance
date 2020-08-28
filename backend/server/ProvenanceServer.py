@@ -8,6 +8,7 @@ from datetime import datetime
 import os.path
 from ipaddress import ip_network, ip_address, \
     IPv4Address, IPv4Network, IPv6Address, IPv6Network
+import sys
 
 
 class ProvenanceServer(UDPServer, ModelInterface):
@@ -97,6 +98,9 @@ class ProvenanceServer(UDPServer, ModelInterface):
 
     # TODO: add function typing for ModelController Methods
     def restore(self, file):
+        if not os.path.exists(file):
+            print(f"File not found! ({file})")
+            sys.exit(1)
         try:
             with open(file, 'r') as file:
                 data = json.load(file)

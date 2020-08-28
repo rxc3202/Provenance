@@ -1,11 +1,17 @@
 from socketserver import BaseRequestHandler
 from backend.handlers.protocolhandler import ProtocolHandler
 from backend.handlers.resolution import DNSHandler
-from datetime import datetime
-from util.structs import CommandType, Command
 from collections import deque
+from datetime import datetime
+from enum import Enum
+import logging
 from typing import Union
+from util.structs import CommandType, Command
 
+class States(Enum):
+    SYNC    = 0
+    ENCRYPT = 1
+    READY   = 2
 
 class ProvenanceClientHandler(BaseRequestHandler):
     beacons = {
@@ -17,19 +23,21 @@ class ProvenanceClientHandler(BaseRequestHandler):
     """ Builtin Functions"""
 
     def __init__(self, request, client_address, serverinfo, handler, hostname=None):
+        self.logger = logging.getLogger("Provenance")
         # Superclass initialization
         self.request = request
         self.client_address = client_address
         self.server = serverinfo
         # Subclass Initialization
         self._hostname = hostname or f"Client_{ProvenanceClientHandler._client_count}"
-        self._os = "N/A"
+        self._os = ""
         self._queued_commands = deque()
         self._sent_commands = []
         self._command_count = 0
         self._last_active: Union[datetime, None] = None
-        self._synchronized = False
+        self._key: str = ""
         self._protocol_handler = None
+        self._state = States.SYNC
         
         h = self.beacons[handler]
         self._protocol_handler = h(
@@ -47,6 +55,8 @@ class ProvenanceClientHandler(BaseRequestHandler):
         hostname = data["hostname"]
         ip = data["ip"]
         commands = data["commands"]
+        state = data["state"]
+        key = data["key"]
 
         beacon_handler = ProvenanceClientHandler.beacons[beacon]
         self._protocol_handler = beacon_handler(ip, None)
@@ -54,6 +64,8 @@ class ProvenanceClientHandler(BaseRequestHandler):
         self._hostname = hostname
         self.client_address = (ip, None)
         self._last_active = None
+        self._state = States(state)
+        self._key = key
         if commands:
             for c in commands:
                 self.queue_command(
@@ -70,6 +82,8 @@ class ProvenanceClientHandler(BaseRequestHandler):
             "hostname": self._hostname,
             "ip": self.ip,
             "active": self.last_active,
+            "state": self._state.value,
+            "key": self._key,
             "commands": [Command.encode(c) for c in self._queued_commands]
         }
 
@@ -95,17 +109,32 @@ class ProvenanceClientHandler(BaseRequestHandler):
         
         _, port = self.client_address
         self._last_active = datetime.now()
-        if not self._synchronized:
-            platform, hostname = self._protocol_handler.synchronize(self.request, port)
-            self._os = platform
-            self._hostname = hostname
-            self._synchronized = True
+
+        key = "testKey"
+        if self._state == States.SYNC:
+            response = self._protocol_handler.synchronize(self.request, port)
+            if response:
+                self._os = response[0]
+                self._hostname = response[1]
+                self._state = States.ENCRYPT
+                self.logger.debug(f"{self._hostname}: SYNC CONFIRMED")
+
+        elif self._state == States.ENCRYPT:
+            confirmed = self._protocol_handler.encrypt(self.request, port, key)
+            if confirmed:
+                self._state = States.READY
+                self.logger.debug(f"{self._hostname}: KEY RECEIPT CONFIRMED")
+            else:
+                self.logger.debug(f"{self._hostname}: KEY SENT={key}")
+
         else:
             if self._queued_commands:
                 next_cmd = self._queued_commands.popleft()
+                self.logger.info(f"[{self.ip}] {next_cmd.command} SENT")
             else:
                 next_cmd = Command(CommandType.NOP)
-            self._protocol_handler.handle_request(self.request, port, next_cmd)
+                self.logger.debug(f"[{self.ip}] NOP SENT")
+            self._protocol_handler.respond(self.request, port, next_cmd)
             self._sent_commands.append((self._command_count, next_cmd))
 
     def queue_command(self, ctype, cmd):
