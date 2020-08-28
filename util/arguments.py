@@ -11,9 +11,10 @@ def parse_arguments():
     parser.add_argument("port", type=int, default=53, help="The port on which the server listens")
     # Optional Arguments
     parser.add_argument("-v", "--verbose",
-                        action="count",
-                        default=0,
-                        help="""Use -v to display [INFO]. Use -vv to display [INFO] and [DEBUG].""")
+                        dest="verbose",
+                        default="info",
+                        choices=["debug", "info", "warning", "error", "critical"],
+                        help="""Use <debug|info|warning|error|critical> for logging levels""")
 
     parser.add_argument("--no-discovery",
                         dest="discovery",

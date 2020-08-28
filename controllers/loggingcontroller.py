@@ -8,12 +8,19 @@ class LoggingController(object):
     A controller class that will be a intermediary between the UI and the
     model
     """
+    _levels = {
+        "debug": logging.DEBUG,
+        "info": logging.INFO,
+        "warning": logging.WARNING,
+        "error": logging.ERROR,
+        "critical": logging.CRITICAL
+    }
 
     logfile_date_format = "%Y-%m-%d %H:%M:%S"
     ui_date_format = "%H:%M:%S"
 
-    def __init__(self, logfile):
-        self._log_level = logging.INFO
+    def __init__(self, logfile, level="info"):
+        self._log_level = self._levels[level]
         # Set up logger
         logger = logging.getLogger("Provenance")
         self._logger: logging.Logger = logger

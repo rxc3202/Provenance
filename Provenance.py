@@ -21,7 +21,7 @@ def main():
     # Initialize Logging settings for Provenance, basically telling
     # the "Provenance" logger to redirect to the specified logfile AND
     # to the UI
-    logger_controller = LoggingController(logfile="logs/provenance.log")
+    logger_controller = LoggingController(logfile="logs/provenance.log", level=args.verbose)
     logger = logging.getLogger("Provenance")
 
     # Initialize Backend
