@@ -1,4 +1,5 @@
 from socketserver import BaseRequestHandler
+from backend.handlers.protocolhandler import ProtocolHandler
 from backend.handlers.resolution import DNSHandler
 from datetime import datetime
 from util.structs import CommandType, Command
@@ -15,32 +16,26 @@ class ProvenanceClientHandler(BaseRequestHandler):
 
     """ Builtin Functions"""
 
-    def __init__(self, request, client_address, serverinfo, handler="DNS", hostname=None,
-                 os="Windows", commands=None):
+    def __init__(self, request, client_address, serverinfo, handler, hostname=None):
         # Superclass initialization
         self.request = request
         self.client_address = client_address
         self.server = serverinfo
-
         # Subclass Initialization
         self._hostname = hostname or f"Client_{ProvenanceClientHandler._client_count}"
-        self._os = os
+        self._os = "N/A"
         self._queued_commands = deque()
         self._sent_commands = []
         self._command_count = 0
         self._last_active: Union[datetime, None] = None
         self._synchronized = False
-
-        # The model that tracks each controlled machine
-        # TODO: somehow dynamically assess the protocol (maybe set up multiple ports)
         self._protocol_handler = None
-        if request or handler:
-            handler_type = self.beacons[handler]
-            # TODO: fix this jank
-            self._protocol_handler = handler_type(
-                ip=client_address[0], socket=request[1] if request else None
-            )
-
+        
+        h = self.beacons[handler]
+        self._protocol_handler = h(
+            ip=client_address[0],
+            socket=request[1] if request else None
+        )
         ProvenanceClientHandler._client_count += 1
 
     def __repr__(self):
@@ -80,30 +75,7 @@ class ProvenanceClientHandler(BaseRequestHandler):
 
     # Application-Based Methods
 
-    def update_handler(self, request, client_address):
-        """
-        Update this instance to use the new request and socket
-        parameters. Originally :module: socketserver.UDPServer
-        would create a new instance for each request, this
-        method must be called or the request will be sent
-        to the previous temporary port used by the beacon
-        to call back
-        :param request: the request received by the server
-        :param client_address: tuple of (IP, port)
-        :return: None
-        """
-        self.client_address = client_address
-        self.request = request
-        # If we have not set a protocol handler because we added the machine manuall
-        # OR If we are restoring from backup
-        # Either case we don't have an active socket and must use the socket from
-        # the incoming request
-        if not self._protocol_handler or self._protocol_handler.socket is None:
-            self._protocol_handler = DNSHandler(
-                ip=client_address[0], socket=request[1]
-            )
-
-    def handle(self):
+    def handle(self, request, client_address):
         """
         The method required by BaseRequestHandler that handles the
         incoming request. Will tell the underlying protocol
@@ -111,6 +83,16 @@ class ProvenanceClientHandler(BaseRequestHandler):
         is one queued, else send NOP
         :return:  None
         """
+        # Update the details of the client
+        self.client_address = client_address
+        self.request = request
+        # If dont have a protocol handler, we added the
+        # machine manually OR  we are restoring from backup
+        # Either case we don't have an active socket and must 
+        # use the socket from the incoming request
+        if self._protocol_handler.socket is None:
+            self._protocol_handler.socket = request[1]
+        
         _, port = self.client_address
         self._last_active = datetime.now()
         if not self._synchronized:
@@ -122,7 +104,7 @@ class ProvenanceClientHandler(BaseRequestHandler):
             if self._queued_commands:
                 next_cmd = self._queued_commands.popleft()
             else:
-                next_cmd = Command(CommandType.NOP, "NONE")
+                next_cmd = Command(CommandType.NOP)
             self._protocol_handler.handle_request(self.request, port, next_cmd)
             self._sent_commands.append((self._command_count, next_cmd))
 

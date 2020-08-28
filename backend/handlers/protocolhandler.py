@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from enum import Enum
 import logging
 from util.structs import Command
+from socket import socket
 
 
 class ProtocolHandler(ABC):
@@ -24,6 +25,10 @@ class ProtocolHandler(ABC):
     @property
     def socket(self):
         return self._socket
+    
+    @socket.setter
+    def socket(self, sock: socket):
+        self._socket = sock
 
     @property
     def synchronized(self):

@@ -48,7 +48,7 @@ class Command(object):
     __slots__ = ["_type", "_command", "_uid"]
     _keys = [x.replace('_', '') for x in __slots__]
 
-    def __init__(self, cmd_type, command, uid=None):
+    def __init__(self, cmd_type, command="", uid=None):
         self._type: CommandType = cmd_type
         self._command: str = command
         self._uid = uid

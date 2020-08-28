@@ -12,6 +12,7 @@ class Records(Enum):
 class Domains(Enum):
     """ The valid subdomains used as function indicators by Resolution """
     SYNC = "sync"    
+    REQUEST = "request"
     ENCRYPT = "encrypt"
     QUERY = "query"
     CONFIRM = "confirm"
@@ -21,6 +22,7 @@ class Domains(Enum):
 class DNSHandler(ProtocolHandler):
     """ This is the Provenance Handler implementation for DNS beacons"""
     RESPONSES = {
+        "request": "SYNC-REQUEST",
         "sync": "SYNC-ACKNOWLEDGE",
         "noencrypt": "1:NONE",
     }
@@ -88,7 +90,7 @@ class DNSHandler(ProtocolHandler):
                 rname=request.get_q().get_qname(),
                 rtype=rr_type,
                 rclass=CLASS.IN,
-                rdata=rr_constructor(f"<{opcode.value}>:{cmd}"),
+                rdata=rr_constructor(f"1:{cmd}"),
                 ttl=1337))
         # send command
         if opcode != CommandType.NOP:
@@ -112,5 +114,5 @@ class DNSHandler(ProtocolHandler):
                 rdata=rr_constructor(f"1:{self.RESPONSES[control]}"),
                 ttl=1337))
         # send command
-        self.logger.debug(f"Sending CONTROL packet to {self.ip}")
+        self.logger.debug(f"Sending CONTROL packet to {self.ip}: {control}")
         self.socket.sendto(command_packet.pack(), (self.ip, port))

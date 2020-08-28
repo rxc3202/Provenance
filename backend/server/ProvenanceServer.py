@@ -80,19 +80,20 @@ class ProvenanceServer(UDPServer, ModelInterface):
         return True
 
     def process_request(self, request, client_address):
-        addr, port = client_address
+        addr, _ = client_address
 
-        if addr in self.machines.keys():
-            # Need to give handler the new request / new port
-            self.machines[addr].update_handler(request, client_address)
-        else:
+        if not addr in self.machines.keys():
             self.machines[addr] = self.RequestHandlerClass(
-                request=request, client_address=client_address, serverinfo=self.server_address)
+                request=request,
+                client_address=client_address,
+                serverinfo=self.server_address,
+                handler="DNS"
+            )
         return self.finish_request(request, client_address)
 
     def finish_request(self, request, client_address):
         addr = client_address[0]
-        return self.machines[addr].handle()
+        return self.machines[addr].handle(request, client_address)
 
     # TODO: add function typing for ModelController Methods
     def restore(self, file):
@@ -224,12 +225,14 @@ class ThreadedProvenanceServer(ProvenanceServer):
         # Otherwise update the info needed to send packets
         addr, port = client_address
         self.logger.debug(f"Processing request from: {addr}")
-        if addr in self.machines.keys():
-            self.machines[addr].update_handler(request, client_address)
-        else:
+        if not addr in self.machines.keys():
             self.logger.info(f"New machine added: {addr}")
             self.machines[addr] = self.RequestHandlerClass(
-                request=request, client_address=client_address, serverinfo=(addr, port))
+                request=request,
+                client_address=client_address,
+                serverinfo=(addr, port),
+                handler="DNS"
+            )
 
         thread = threading.Thread(
             target=self.finish_request,
@@ -242,10 +245,6 @@ class ThreadedProvenanceServer(ProvenanceServer):
                 self.threads = []
             self.threads.append(thread)
         thread.start()
-
-    def finish_request(self, request, client_address):
-        addr = client_address[0]
-        return self.machines[addr].handle()
 
     def shutdown(self):
         self.logger.critical(f"Server shutting down")
