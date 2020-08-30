@@ -120,22 +120,32 @@ class ProvenanceClientHandler(BaseRequestHandler):
                 self.logger.debug(f"{self._hostname}: SYNC CONFIRMED")
 
         elif self._state == States.ENCRYPT:
-            confirmed = self._protocol_handler.encrypt(self.request, port, key)
-            if confirmed:
+            next_state = States(self._protocol_handler.encrypt(self.request, port, key))
+            if next_state == States.READY:
                 self._state = States.READY
                 self.logger.debug(f"{self._hostname}: KEY RECEIPT CONFIRMED")
             else:
-                self.logger.debug(f"{self._hostname}: KEY SENT={key}")
+                self._state = next_state
 
-        else:
+        elif self._state == States.READY:
             if self._queued_commands:
                 next_cmd = self._queued_commands.popleft()
-                self.logger.info(f"[{self.ip}] {next_cmd.command} SENT")
             else:
                 next_cmd = Command(CommandType.NOP)
-                self.logger.debug(f"[{self.ip}] NOP SENT")
-            self._protocol_handler.respond(self.request, port, next_cmd)
-            self._sent_commands.append((self._command_count, next_cmd))
+            
+            state = self._protocol_handler.respond(self.request, port, next_cmd)
+            next_state = States(state)
+            # If there is a valid request send the command
+            if next_state == States.READY:
+                self._sent_commands.append((self._command_count, next_cmd))
+            else:
+                # If there has been an error, add the popped command back
+                if next_cmd.type != CommandType.NOP:
+                    self._queued_commands.appendleft(next_cmd)
+                self._state = next_state
+        else:
+            # Shouldn't happen
+            raise ValueError("ProvenanceClient State {self._state} invalid.")
 
     def queue_command(self, ctype, cmd):
         """

@@ -53,21 +53,44 @@ class ProtocolHandler(ABC):
         raise NotImplementedError("syncrhonize() not implemented in subclass.")
 
     @abstractmethod
-    def encrypt(self, raw_request, port: int, key: str):
+    def encrypt(self, raw_request, port: int, key: str) -> int:
         """
         A method that handles the response to the encrypt request from the beacon.
         This will take the raw requested forwarded from the network and then
-        send the encryption key. In order to signal Provenance to change to the next
-        state: READY, this must return True.
+        send the encryption key. This function must tell Provenance the state
+        to go to next as described below:
+
+        SYNC    -> 0
+        ENCRYPT -> 1
+        READY   -> 2
+
+        If the server needs to reqreuest information from the beacon and needs to
+        send the key back, then respond with 0.
+
+        If the server needs to maintain the encrypt state return 1
+
+        If the server can proceed accepting normal queries, return 2
         """
         raise NotImplementedError("respond() not implemented in subclass.")
 
 
     @abstractmethod
-    def respond(self, raw_request, port: int, cmd: Command):
+    def respond(self, raw_request, port: int, cmd: Command) -> int:
         """
         A method that handles the response to normal command queries. This will take
         the raw requested forwarded from the network and then send the next command
-        in the queue
+        in the queue. This function must tell Provenance the state
+        to go to next as described below:
+
+        SYNC    -> 0
+        ENCRYPT -> 1
+        READY   -> 2
+
+        If the server needs to reqreuest information from the beacon and needs to
+        send the key back, then respond with 0.
+
+        If the server needs to return to the encrypt state return 1
+
+        If the server can proceed accepting normal queries, return 2
         """
         raise NotImplementedError("respond() not implemented in subclass.")
