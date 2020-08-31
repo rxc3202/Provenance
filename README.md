@@ -10,9 +10,9 @@ and Linux operating systems. Also, I love development :)
 
 | Beacon        | Protocol      | Windows           | Linux     |
 | ------------- |:-------------:| ----------------- | --------- |
-| resolution    | DNS           | in development    | Golang   |
-|  ?            | ICMP          | future project    | future project |
-|  ?            | HTTP          | future project    | future project |
+| resolution    | DNS           | On Hold           | Golang    |
+|  ?            | ICMP          | future            | future    |
+|  ?            | HTTP          | future            | future    |
 > NOTE: All new feature development on beacons is currently in Golang due to ease of development and the desire to learn a new language.
 
 #### Disclaimer
@@ -62,7 +62,7 @@ extendable. As such, below will contain as much specificity as possible.
 | Directory     | Description                                                           |
 | ------------- | --------------------------------------------------------------------- |
 | `backend`     | Server code and `handlers` for different beacons                      |
-| `controllers` | Classes that provide an abstraction layer between the model and the UI |
+| `controllers` | Classes that provide an abstraction layer between the model and the UI|
 | `frontend`    | Code need to run WebGUI or command line UI                            |
 | `backups`     | Default directory where server backups are stored upon creation       |
 | `logs`        | Default directory where server logs are stored                        |
@@ -86,10 +86,12 @@ In order to process each request coming into the server, each `ProvenanceClient`
 `protocolhandler`, which will properly define the server's response when 
 the server receives a request from the specific `ProvenanceClient`'s IP address. From there, the server
 will call the `ProvenanceClient`'s `handle()` method, which will call the underlying `protocolhandler`'s
-`handle_request()` method, which is left up to the implementer to figure out how to **decode the request**,
- **figure out the correct response**, and then **encode the command into the acceptable protocol format**.
-(This should be changed in later versions so that the `ProvenanceClient` instance sends a command
-that has been return by `handle_request()`)
+`synchronize()`, `encrypt()` and `respond()` methods. These three methods make up the internal state
+machine stored within each instanceof `ProvenanceClient`. However is left up to the implementer to
+figure out how to **decode the request**, **figure out the correct response**, and then
+**encode the command into the acceptable protocol format** using these methods. The state chart below outlines the expected statechart.
+
+![Internal Client State Machine](docs/statechart.png)
 
 The sequence diagram below depicts the call sequence for the interactions between the `ProvenanceServer` instance
 receiving a `request` and its subsequent handling. _NOTE: `ProvenanceServer` is a subclass of Python's

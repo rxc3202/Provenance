@@ -32,6 +32,9 @@ class DNSHandler(ProtocolHandler):
         return "DNS"
 
     def synchronize(self, raw_request, port):
+        """
+        See protocolhandler.py
+        """
         data = raw_request[0].strip()
         try:
             request = DNSRecord.parse(data)
@@ -51,6 +54,9 @@ class DNSHandler(ProtocolHandler):
         return ""
 
     def encrypt(self, raw_request, port, key):
+        """
+        See protocolhandler.py
+        """
         data = raw_request[0].strip()
         try:
             request = DNSRecord.parse(data)
@@ -73,6 +79,9 @@ class DNSHandler(ProtocolHandler):
         return 0
 
     def respond(self, raw_request, port, cmd):
+        """
+        See protocolhandler.py
+        """
         data = raw_request[0].strip()
         try:
             # if request.header.id != self.latest_id used for triplicate packets on windows
@@ -107,6 +116,9 @@ class DNSHandler(ProtocolHandler):
         return 0
 
     def _send_command(self, request: DNSRecord, port: int, command: Command):
+        """
+        A helper function used to send command packets to the Resolution client
+        """
         opcode = command.type
         cmd = command.command
         # get the type of record this beacon is ready to receive
@@ -128,6 +140,9 @@ class DNSHandler(ProtocolHandler):
 
 
     def _send_control(self, request: DNSRecord, port: int, control: str):
+        """
+        A helper function used to send control packets to the Resolution client
+        """
         # get the type of record this beacon is ready to receive
         rr_type, rr_constructor = self.record_type.value
         # Generate skeleton question for packet
