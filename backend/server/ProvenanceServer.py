@@ -228,7 +228,6 @@ class ThreadedProvenanceServer(ProvenanceServer):
         # Create a unique handler for that machine if doesn't exist
         # Otherwise update the info needed to send packets
         addr, port = client_address
-        self.logger.debug(f"Processing request from: {addr}")
         if not addr in self.machines.keys():
             self.logger.info(f"New machine added: {addr}")
             self.machines[addr] = self.RequestHandlerClass(

