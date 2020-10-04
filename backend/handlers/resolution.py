@@ -124,78 +124,26 @@ class DNSHandler(ProtocolHandler):
             self.logger.debug(f"[{self.ip}] respond: DNS Packet Malformed: {str(e)}")
         return 2
 
-    def _send_command(self, record: DNSRecord, port: int, command: str):
+    def _send_command(self, query: DNSRecord, port: int, command: Command):
         """
         Send control packets to the client
         """
 
-        def TXT(rr_type, packet):
-            cmd = command.command
-            _, constructor, msg_size = Records.TXT.value
-            chunks = [f"310{cmd[i:i+msg_size]}" for i in range(0, len(cmd), msg_size)] 
-            opcode = 0 if command.type == CommandType.NOP else 3
-            if opcode == 0:
-                packet.add_answer(
-                        RR(rname=record.get_q().get_qname(),
-                        rtype=rr_type,
-                        rclass=CLASS.IN,
-                        rdata=constructor("010None"),
-                        ttl=1337)
-                )
-            else:
-                for i, chunk in enumerate(chunks):
-                    answer = RR(
-                            rname=record.get_q().get_qname(),
-                            rtype=rr_type,
-                            rclass=CLASS.IN,
-                            rdata=constructor(chunk),
-                            ttl=1337)
-                    packet.add_answer(answer)
-
-        def AAAA(rr_type, packet):
-            cmd = command.command
-            _, constructor, msg_size = Records.AAAA.value
-            chunks = [cmd[i:i+msg_size] for i in range(0, len(cmd), msg_size)]
-
-            opcode = 0 if command.type == CommandType.NOP else 3
-            if opcode == 0:
-                packet.add_answer(
-                    RR(
-                        rname=record.get_q().get_qname(),
-                        rtype=rr_type,
-                        rclass=CLASS.IN,
-                        # Send a nop packet of seq num 0, and expected length 1
-                        rdata=constructor([0, 1, 0] + [0 for _ in range(13)]),
-                        ttl=1337))
-            else:
-                for i, chunk in enumerate(chunks):
-                    #data = [opcode, i, len(chunks)] + [ord(c) for c in chunk]
-                    data = [3, 1, 0] + [ord(c) for c in chunk] #currently doing edns
-                    # Pad the data to 16 bytes
-                    data += [0 for _ in range(16 - len(data))]
-                    answer = RR(
-                            rname=record.get_q().get_qname(),
-                            rtype=rr_type,
-                            rclass=CLASS.IN,
-                            # 1st byte indicates data, second byte is seq number, 3rd is num transmission packets
-                            rdata=constructor(data),
-                            ttl=1337)
-                    packet.add_answer(answer)
-            
-
-        rr_type = record.questions[0].qtype
+        rr_type = query.questions[0].qtype
         # Generate skeleton question for packet
-        command_packet = record.reply()
+        response = query.reply()
+        opcode = 0 if command.type == CommandType.NOP else 3
         if rr_type == 16:
-            TXT(rr_type, command_packet)
+            response = self._packetize_txt(query, response, rr_type, command.command, opcode)
+            #TXT(rr_type, command_packet)
         elif rr_type == 28:
-            AAAA(rr_type, command_packet)
+            response = self._packetize_aaaa(query, response, rr_type, command.command, opcode)
         else:
             self.logger.debug("send_command: invalid record")
             pass
 
         # Reply
-        self.socket.sendto(command_packet.pack(), (self.ip, port))
+        self.socket.sendto(response.pack(), (self.ip, port))
 
     def _send_control(self, record: DNSRecord, port: int, control: str, data: str):
         """
@@ -231,3 +179,56 @@ class DNSHandler(ProtocolHandler):
 
         # Reply
         self.socket.sendto(command_packet.pack(), (self.ip, port))
+
+    
+    def _packetize_txt(self, query, response, rr_type, data, opcode):
+        _, constructor, msg_size = Records.TXT.value
+        chunks = [f"{data[i:i+msg_size]}" for i in range(0, len(data), msg_size)] 
+        if opcode == 0:
+            response.add_answer(
+                    RR(rname=query.get_q().get_qname(),
+                    rtype=rr_type,
+                    rclass=CLASS.IN,
+                    rdata=constructor("010vsp1=This is a DNS TXT Record"),
+                    ttl=1337)
+            )
+        else:
+            for i, chunk in enumerate(chunks):
+                answer = RR(
+                        rname=query.get_q().get_qname(),
+                        rtype=rr_type,
+                        rclass=CLASS.IN,
+                        rdata=constructor(f"{opcode}{len(chunks)}{i}" + chunk),
+                        ttl=1337)
+                response.add_answer(answer)
+        return response
+
+
+    def _packetize_aaaa(self, query, response, rr_type, data, opcode):
+        _, constructor, msg_size = Records.AAAA.value
+        data = "cat transport.go"
+        chunks = [data[i:i+msg_size] for i in range(0, len(data), msg_size)]
+        if opcode == 0:
+            response.add_answer(
+                RR(
+                    rname=query.get_q().get_qname(),
+                    rtype=rr_type,
+                    rclass=CLASS.IN,
+                    # Send a nop packet of seq num 0, and expected length 1
+                    rdata=constructor([0, 1, 0] + [0 for _ in range(13)]),
+                    ttl=1337))
+        else:
+            for i, chunk in enumerate(chunks):
+                #data = [opcode, i, len(chunks)] + [ord(c) for c in chunk]
+                data = [3, 1, 0] + [ord(c) for c in chunk] #currently doing edns
+                # Pad the data to 16 bytes
+                data += [0 for _ in range(16 - len(data))]
+                answer = RR(
+                        rname=query.get_q().get_qname(),
+                        rtype=rr_type,
+                        rclass=CLASS.IN,
+                        # 1st byte indicates data, second byte is seq number, 3rd is num transmission packets
+                        rdata=constructor(data),
+                        ttl=1337)
+                response.add_answer(answer)
+        return response
