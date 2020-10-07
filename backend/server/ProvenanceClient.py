@@ -12,6 +12,7 @@ class States(Enum):
     SYNC    = 0
     ENCRYPT = 1
     READY   = 2
+    FRAGMENTS = 3
 
 class ProvenanceClientHandler(BaseRequestHandler):
     beacons = {
@@ -35,7 +36,7 @@ class ProvenanceClientHandler(BaseRequestHandler):
         self._sent_commands = []
         self._command_count = 0
         self._last_active: Union[datetime, None] = None
-        self._key: str = ""
+        self._key: str = "testKey"
         self._protocol_handler = None
         self._state = States.SYNC
         
@@ -110,7 +111,10 @@ class ProvenanceClientHandler(BaseRequestHandler):
         _, port = self.client_address
         self._last_active = datetime.now()
 
-        key = "testKey"
+
+        # When first synchronzing with the server, both the client and server
+        # should be in the SYNC state. During this phase, the beacon will  
+        # reach out to Provenance first and send over host and OS information
         if self._state == States.SYNC:
             response = self._protocol_handler.synchronize(self.request, port)
             if response:
@@ -119,14 +123,18 @@ class ProvenanceClientHandler(BaseRequestHandler):
                 self._state = States.ENCRYPT
                 self.logger.debug(f"{self._hostname}: SYNC CONFIRMED")
 
+        # After Synchronization, the client will request an encryption key
+        # to encrypt communications between the client and Provenance
         elif self._state == States.ENCRYPT:
-            next_state = States(self._protocol_handler.encrypt(self.request, port, key))
+            next_state = States(self._protocol_handler.encrypt(self.request, port, self._key))
             if next_state == States.READY:
                 self._state = States.READY
                 self.logger.debug(f"{self._hostname}: KEY RECEIPT CONFIRMED")
             else:
                 self._state = next_state
 
+        # After transferring the encryption key, the server is ready to receive
+        # request for commands
         elif self._state == States.READY:
             if self._queued_commands:
                 next_cmd = self._queued_commands.popleft()
@@ -143,6 +151,17 @@ class ProvenanceClientHandler(BaseRequestHandler):
                 if next_cmd.type != CommandType.NOP:
                     self._queued_commands.appendleft(next_cmd)
                 self._state = next_state
+
+        # Fragments is a special state theat indicates that long commands
+        # should be split up into multiple Packets and should only be used
+        # for UDP protocols. 
+        elif self._state == States.FRAGMENTS:
+            state = self._protocol_handler.respond(self.request, port, None)
+            if state == 2:
+                self._state = States.READY
+            else:
+                pass
+
         else:
             # Shouldn't happen
             raise ValueError("ProvenanceClient State {self._state} invalid.")
