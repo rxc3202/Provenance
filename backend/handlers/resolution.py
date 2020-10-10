@@ -4,6 +4,8 @@ from util.structs import CommandType, Command
 from enum import Enum
 from collections import deque
 import logging
+from random import choice
+from string import ascii_lowercase
 
 retransmit = {
     "a": 1, "b": 2, "c": 3, "d": 4,
@@ -182,72 +184,111 @@ class DNSHandler(ProtocolHandler):
         self.socket.sendto(response.pack(), (self.ip, port))
 
     def _packetize_txt(self, query, response, opcode, data=None):
+        """
+        will break up the transmitted data into payloads that can be sent
+        over the network. The size of the packets will be 255 - 3 for the
+        header bytes needed to reassemble packets by resolution.
+        :param query: A DNSRecord query
+        :param response: A DNSRecord response skeleton made by doing query.reply()
+        :param opcode: an integer representing the opcode for resolution to interpret
+        :param data: the data to encode
+        :return: a dnslib.DNSRecord with the first payload chunk and a deque() of next chunks
+        to be sent
+        """
+        if not data:
+            data = "010vsp1=This is a DNS TXT Record"
+
+        self.prev_cmd = []
+        rest = deque()
         _, constructor, msg_size = Records.TXT.value
         rr_type = query.questions[0].qtype
         chunks = [f"{data[i:i+msg_size]}" for i in range(0, len(data), msg_size)] 
-        if opcode == 0:
-            response.add_answer(
-                    RR(rname=query.get_q().get_qname(),
-                    rtype=rr_type,
-                    rclass=CLASS.IN,
-                    rdata=constructor("010vsp1=This is a DNS TXT Record"),
-                    ttl=1337)
-            )
-        else:
-            for i, chunk in enumerate(chunks):
-                answer = RR(
-                        rname=query.get_q().get_qname(),
-                        rtype=rr_type,
-                        rclass=CLASS.IN,
-                        rdata=constructor(f"{opcode}{len(chunks)}{i}" + chunk),
-                        ttl=1337)
-                response.add_answer(answer)
-        return response
-
-
-    def _packetize_aaaa(self, query, response, opcode, data=None):
-        self.prev_cmd = []
-        if not data:
-            data = "test"
-
-        _, constructor, msg_size = Records.AAAA.value
-        rr_type = query.questions[0].qtype
-        chunks = [data[i:i+msg_size] for i in range(0, len(data), msg_size)]
-        rest = deque()
-        if opcode == 0 or not data:
-            response.add_answer(
-                RR(
+        for i, chunk in enumerate(chunks):
+            answer = RR(
                     rname=query.get_q().get_qname(),
                     rtype=rr_type,
                     rclass=CLASS.IN,
-                    # Send a nop packet of seq num 0, and expected length 1
-                    rdata=constructor([0, 1, 0] + [0 for _ in range(13)]),
-                    ttl=1337))
-        else:
-            for i, chunk in enumerate(chunks):
-                #data = [opcode, i, len(chunks)] + [ord(c) for c in chunk]
-                data = [opcode, len(chunks) - 1, i] + [ord(c) for c in chunk] #currently doing edns
-                # Pad the data to 16 bytes
-                data += [0 for _ in range(16 - len(data))]
-                answer = RR(
-                        rname=query.get_q().get_qname(),
-                        rtype=rr_type,
-                        rclass=CLASS.IN,
-                        # 1st byte indicates data, second byte is seq number, 3rd is num transmission packets
-                        rdata=constructor(data),
-                        ttl=1337)
-                self.prev_cmd.append(answer)
-                
-            
-                # Add at least one response to the query
-                if i == 0:
-                    response.add_answer(answer)
-                    continue
+                    rdata=constructor(f"{opcode}{len(chunks)}{i}" + chunk),
+                    ttl=1337)
+            response.add_answer(answer)
+            self.prev_cmd.append(answer)
 
-                # If Extended DNS is enabled, we can have up to 2048 bytes.
-                # Otherwise we're going to send command over multiple queries
-                if self.edns and i > 0:
-                    response.add_answer(answer)
-                else:
-                    rest.append(answer)
+            # Add at least one response to the query
+            if i == 0:
+                response.add_answer(answer)
+                continue
+
+            # If Extended DNS is enabled, we can have up to 2048 bytes.
+            # Otherwise we're going to send command over multiple queries
+            if self.edns and i > 0:
+                response.add_answer(answer)
+            else:
+                rest.append(answer)
+        # Add the end transmission packet to signal that it is done
+        rest.append(RR(rname=query.get_q().get_qname(),
+        rtype=rr_type,
+        rclass=CLASS.IN,
+        rdata=constructor("END-TRANSMISSION"),
+        ttl=1337))
+        return response, rest
+
+
+    def _packetize_aaaa(self, query, response, opcode, data=None):
+        """
+        will break up the transmitted data into payloads that can be sent
+        over the network. The size of the packets will be 16 - 3 for the
+        header bytes needed to reassemble packets by resolution.
+        :param query: A DNSRecord query
+        :param response: A DNSRecord response skeleton made by doing query.reply()
+        :param opcode: an integer representing the opcode for resolution to interpret
+        :param data: the data to encode
+        :return: a dnslib.DNSRecord with the first payload chunk and a deque() of next chunks
+        to be sent
+        """
+        self.prev_cmd = []
+        _, constructor, msg_size = Records.AAAA.value
+
+        # If there is no generated payload, just do a random of msg_size
+        # which equates to just a randome IPv6 address
+        if not data:
+            data = "".join(choice(ascii_lowercase) for i in range(msg_size))
+
+        rr_type = query.questions[0].qtype
+        chunks = [data[i:i+msg_size] for i in range(0, len(data), msg_size)]
+        rest = deque()
+        for i, chunk in enumerate(chunks):
+            # Generate the Resolution Protocol Header (3 bytes)
+            edata = [opcode, len(chunks) - 1, i]
+            # Add the data to the packet
+            edata += [ord(c) for c in chunk]
+            # Pad the data to 16 bytes
+            edata += [0 for _ in range(16 - len(edata))]
+            answer = RR(
+                    rname=query.get_q().get_qname(),
+                    rtype=rr_type,
+                    rclass=CLASS.IN,
+                    rdata=constructor(edata),
+                    ttl=1337)
+            self.prev_cmd.append(answer)
+            
+            # Add at least one response to the query
+            if i == 0:
+                response.add_answer(answer)
+                continue
+
+            # If Extended DNS is enabled, we can have up to 2048 bytes.
+            # Otherwise we're going to send command over multiple queries
+            if self.edns and i > 0:
+                response.add_answer(answer)
+            else:
+                rest.append(answer)
+        # Add the end transmission packet to signal that it is done
+        if len(chunks) > 1:
+            end = [Opcodes.END.value, 1, 0] + [0 for _ in range(msg_size)]
+            rest.append(RR(rname=query.get_q().get_qname(),
+            rtype=rr_type,
+            rclass=CLASS.IN,
+            rdata=constructor(end),
+            ttl=1337))
+
         return response, rest
