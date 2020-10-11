@@ -173,13 +173,13 @@ class DNSHandler(ProtocolHandler):
         response = query.reply()
         
         if rr_type == 16:
-            response = self._packetize_txt(query, response, opcode, data)
+            response, rest = self._packetize_txt(query, response, opcode, data)
+            self.fragments = rest
         elif rr_type == 28:
             response, rest = self._packetize_aaaa(query, response, opcode, data)
             self.fragments = rest
         else:
             self.logger.debug("send_data: invalid record")
-            pass
 
         self.socket.sendto(response.pack(), (self.ip, port))
 
@@ -203,6 +203,7 @@ class DNSHandler(ProtocolHandler):
         _, constructor, msg_size = Records.TXT.value
         rr_type = query.questions[0].qtype
         chunks = [f"{data[i:i+msg_size]}" for i in range(0, len(data), msg_size)] 
+        self.logger.debug(chunks)
         for i, chunk in enumerate(chunks):
             answer = RR(
                     rname=query.get_q().get_qname(),
@@ -210,7 +211,6 @@ class DNSHandler(ProtocolHandler):
                     rclass=CLASS.IN,
                     rdata=constructor(f"{opcode}{len(chunks)}{i}" + chunk),
                     ttl=1337)
-            response.add_answer(answer)
             self.prev_cmd.append(answer)
 
             # Add at least one response to the query
@@ -224,12 +224,14 @@ class DNSHandler(ProtocolHandler):
                 response.add_answer(answer)
             else:
                 rest.append(answer)
-        # Add the end transmission packet to signal that it is done
-        rest.append(RR(rname=query.get_q().get_qname(),
-        rtype=rr_type,
-        rclass=CLASS.IN,
-        rdata=constructor("END-TRANSMISSION"),
-        ttl=1337))
+        
+        if len(chunks) > 1:
+            # Add the end transmission packet to signal that it is done
+            rest.append(RR(rname=query.get_q().get_qname(),
+            rtype=rr_type,
+            rclass=CLASS.IN,
+            rdata=constructor("510END-TRANSMISSION"),
+            ttl=1337))
         return response, rest
 
 
