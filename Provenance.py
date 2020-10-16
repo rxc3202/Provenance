@@ -8,7 +8,7 @@ import sys
 import threading
 import logging
 from frontend.cli.clidriver import ProvenanceCLI
-from backend.server.ProvenanceClient import ProvenanceClientHandler
+from backend.clients import DNSClient
 from backend.server.ProvenanceServer import ProvenanceServer, ThreadedProvenanceServer
 import util.arguments as argopts
 from controllers import *
@@ -29,7 +29,6 @@ def main():
         if args.threading:
             server = ThreadedProvenanceServer(
                 server_address=socket,
-                handler=ProvenanceClientHandler,
                 discovery=args.discovery,
                 whitelist=args.whitelist,
                 backup_dir="backups",
@@ -42,6 +41,8 @@ def main():
             server_thread.daemon = True
             server_thread.start()
         else:
+            # We don't want to use this
+            sys.exit(0)
             server = ProvenanceServer(socket, ProvenanceClientHandler, args)
             server.serve_forever()
     except KeyboardInterrupt:

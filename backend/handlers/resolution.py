@@ -40,7 +40,7 @@ class Opcodes(Enum):
     SYNCREQ = 6
 
 
-class DNSHandler(ProtocolHandler):
+class Resolution(ProtocolHandler):
     """ This is the Provenance Handler implementation for DNS beacons"""
 
     def __init__(self, ip, socket):
@@ -54,6 +54,18 @@ class DNSHandler(ProtocolHandler):
 
     def __repr__(self):
         return "DNS"
+    
+    @classmethod
+    def parse_uuid(cls, raw_request):
+        data = raw_request[0].strip()
+        try:
+            request = DNSRecord.parse(data)
+            q = request.questions[0]
+            # reverse the fqdn and split on "." for easier command fetching
+            query = str(q.get_qname()).split(".")[::-1]
+            return query[-1]
+        except DNSError:
+            return None
 
     def synchronize(self, raw_request, port):
         """
@@ -66,10 +78,10 @@ class DNSHandler(ProtocolHandler):
             # reverse the fqdn and split on "." for easier command fetching
             query = str(q.get_qname()).split(".")[::-1]
             if query[3] == Domains.SYNC.value:
-                platform, hostname = query[5], query[4]
+                platform, hostname, uuid = query[5], query[4], query[6]
                 self._send_data(request, port, Opcodes.ACK.value, None)
                 self.fragments.clear()
-                return (platform, hostname)
+                return (platform, hostname, uuid)
             else:
                 # Issue a SYNC-REQUEST if server went down and needs to resync
                 self._send_data(request, port, Opcodes.SYNCREQ.value, None)

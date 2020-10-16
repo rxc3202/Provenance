@@ -9,6 +9,7 @@ import os.path
 from ipaddress import ip_network, ip_address, \
     IPv4Address, IPv4Network, IPv6Address, IPv6Network
 import sys
+from backend.clients.DNSClient import DNSClient
 
 
 class ProvenanceServer(UDPServer, ModelInterface):
@@ -19,9 +20,9 @@ class ProvenanceServer(UDPServer, ModelInterface):
     https://docs.python.org/3.7/library/socketserver.html
     """
 
-    def __init__(self, server_address, handler, bind_and_activate=True, discovery=True, whitelist=None, blacklist=None,
+    def __init__(self, server_address, bind_and_activate=True, discovery=True, whitelist=None, blacklist=None,
                  backup_dir="backups", restore=None):
-        super().__init__(server_address, handler, bind_and_activate)
+        super().__init__(server_address, DNSClient, bind_and_activate)
         self.logger = logging.getLogger("Provenance")
         self.machines = {}
         self.whitelist = set()
@@ -65,36 +66,33 @@ class ProvenanceServer(UDPServer, ModelInterface):
         return super().get_request()
 
     def verify_request(self, request, client_address):
-        addr, _ = client_address
-        # If we're not doing discovery, only whitelisted IPs are valid
-        if not self.discovery:
-            if self._ip_in(addr, self.whitelist):
-                return True
-            else:
-                self.logger.warning(f"{addr} attempted to connect but isn't whitelisted")
-                return False
-        # Otherwise, we check if its in the whitelist
-        # but blacklist takes precedence
-        if self._ip_in(addr, self.whitelist):
-            if self._ip_in(addr, self.blacklist):
-                return False
+        # addr, _ = client_address
+        # # If we're not doing discovery, only whitelisted IPs are valid
+        # if not self.discovery:
+        #     if self._ip_in(addr, self.whitelist):
+        #         return True
+        #     else:
+        #         self.logger.warning(f"{addr} attempted to connect but isn't whitelisted")
+        #         return False
+        # # Otherwise, we check if its in the whitelist
+        # # but blacklist takes precedence
+        # if self._ip_in(addr, self.whitelist):
+        #     if self._ip_in(addr, self.blacklist):
+        #         return False
         return True
 
     def process_request(self, request, client_address):
-        addr, _ = client_address
-
-        if not addr in self.machines.keys():
-            self.machines[addr] = self.RequestHandlerClass(
+        uuid = DNSClient.parse_uuid(request)
+        if uuid not in self.machines.keys():
+            self.machines[uuid] = self.RequestHandlerClass(
                 request=request,
                 client_address=client_address,
-                serverinfo=self.server_address,
-                handler="DNS"
-            )
+                serverinfo=self.server_address)
         return self.finish_request(request, client_address)
 
     def finish_request(self, request, client_address):
-        addr = client_address[0]
-        return self.machines[addr].handle(request, client_address)
+        uuid = DNSClient.parse_uuid(request)
+        return self.machines[uuid].handle(request, client_address)
 
     # TODO: add function typing for ModelController Methods
     def restore(self, file):
@@ -218,9 +216,9 @@ class ThreadedProvenanceServer(ProvenanceServer):
     # used by server_close() to wait for all threads completion.
     threads = []
 
-    def __init__(self, server_address, handler, bind_and_activate=True, discovery=True,
+    def __init__(self, server_address, bind_and_activate=True, discovery=True,
                  whitelist=None, blacklist=None, backup_dir="backups", restore=None):
-        super().__init__(server_address, handler, bind_and_activate,
+        super().__init__(server_address, bind_and_activate,
                          discovery, whitelist, blacklist, backup_dir, restore)
 
     # Server Handling Methods
@@ -228,13 +226,13 @@ class ThreadedProvenanceServer(ProvenanceServer):
         # Create a unique handler for that machine if doesn't exist
         # Otherwise update the info needed to send packets
         addr, port = client_address
-        if not addr in self.machines.keys():
+        uuid = DNSClient.parse_uuid(request)
+        if not uuid in self.machines.keys():
             self.logger.info(f"New machine added: {addr}")
-            self.machines[addr] = self.RequestHandlerClass(
+            self.machines[uuid] = self.RequestHandlerClass(
                 request=request,
                 client_address=client_address,
                 serverinfo=(addr, port),
-                handler="DNS"
             )
 
         thread = threading.Thread(
