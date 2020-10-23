@@ -45,7 +45,7 @@ class DNSClient(BaseRequestHandler):
         DNSClient._client_count += 1
 
     def __repr__(self):
-        return f"ProvenanceClient{{{self.server[1]}, {self._hostname}}}"
+        return f"ResolutionClient{{{self._uuid}, {self.client_address[0]}}}"
     
     @classmethod
     def parse_uuid(cls, request):
@@ -238,3 +238,7 @@ class DNSClient(BaseRequestHandler):
         if self._protocol_handler:
             return self._protocol_handler.__repr__()
         return None
+    
+    @property
+    def uuid(self):
+        return self._uuid

@@ -62,7 +62,7 @@ class ModelController(object):
         self._update_hosts()
         displayed_info = []
         for m in self._displayed_machines:
-            info = self.get_machine_info(m.ip)
+            info = self.get_machine_info(m.uuid)
             next_command = info.commands[0].command if info.commands else "N/A"
             tup = (info.beacon, info.os, info.hostname, info.ip, info.active, next_command)
             displayed_info.append(tup)
@@ -172,107 +172,111 @@ class ModelController(object):
         """
         return self._server.get_hosts()
 
-    def remove_host(self, ip: str):
+    def remove_host(self, uuid: str):
         """
         Remove a host from the C2 Server. The server will no longer send
         commands to that host
-        :param ip: the IP address
+        :param uuid: the uuid identifying the host
         :return: None
         """
         pass
 
-    def add_host(self, ip: str, **kwargs):
+    def add_host(self, uuid: str, **kwargs):
         """
         Add a host to the C2 Server. The server will attempt to send commands
         to the host
-        :param ip: the ip to track on the server
+        :param uuid: the uuid to track on the server
         :return: None
         """
-        return self._server.add_host(ip, **kwargs)
+        return self._server.add_host(uuid, **kwargs)
 
     # ===========================================
     # Host Specific Commands
     # ===========================================
 
-    def queue_command(self, ctype: str, ip: str, command: str):
+    def queue_command(self, ctype: str, uuid: str, command: str):
         """
         Queue a single command on the given host
         :param ctype: a string of "ps", "bash", "cmd", or "nop"
-        :param ip: the IP of the host
+        :param uuid: the uuid of the host
         :param command: the command to add
         :return: None
         """
-        self._server.queue_command(ctype, ip, command)
+        self._server.queue_command(ctype, uuid, command)
 
-    def remove_command(self, ip: str, cmd_id):
+    def remove_command(self, uuid: str, cmd_id):
         """
         Remove a single command on the given host
-        :param ip: the IP of the host
+        :param uuid: the uuid of the host
         :param cmd_id: the powershell command to remove
         :return: None
         """
-        self._server.remove_command(ip, cmd_id)
+        self._server.remove_command(uuid, cmd_id)
 
-    def get_queued_commands(self, ip: str):
+    def get_queued_commands(self, uuid: str):
         """
         Get the queued commands for a given IP address
-        :param ip: the string IP address of the machine
+        :param uuid: the uuid of the machine
         :return: a list of Command structs
         """
-        return self._server.get_queued_commands(ip)
+        return self._server.get_queued_commands(uuid)
 
-    def get_sent_commands(self, ip: str):
+    def get_sent_commands(self, uuid: str):
         """
         Get all the commands sent for the server
-        :param ip:
+        :param uuid:
         :return:
         """
-        return self._server.get_sent_commands(ip)
+        return self._server.get_sent_commands(uuid)
 
-    def get_hostname(self, ip: str):
+    def get_hostname(self, uuid: str):
         """
         Get the hostname of a given IP address
-        :param ip: the ip of the host
+        :param uuid: the uuid of the host
         :return: a string representing the hostname else N/A
         """
-        info = self._server.get_hostname(ip)
+        info = self._server.get_hostname(uuid)
         if info:
             return info
         return "N/A"
 
-    def get_last_active(self, ip: str):
+    def get_last_active(self, uuid: str):
         """
         Get the last known time the client beaconed out to Provenance
         :param ip: the ip of the host to check
         :return: a string in minutes
         """
-        info = self._server.get_last_active(ip)
+        info = self._server.get_last_active(uuid)
         if info is not None:
             return f"{info}m"
         return "N/A"
 
-    def get_beacon_type(self, ip: str):
+    def get_beacon_type(self, uuid: str):
         """
         Get the type of beacon the ip is using
-        :param ip: the ip address as a string
+        :param uuid: the uuid address as a string
         :return: a string of "DNS", "ICMP", "HTTP", etc
         """
-        info = self._server.get_beacon(ip)
+        info = self._server.get_beacon(uuid)
         if info is not None:
             return info
         return "Not Set"
 
-    def get_os(self, ip: str):
-        info = self._server.get_os(ip)
+    def get_os(self, uuid: str):
+        info = self._server.get_os(uuid)
         if info is not None:
             return info
         return "N/A"
 
-    def get_machine_info(self, ip: str):
+    def get_machine_info(self, uuid: str):
         """
         Return the information that the UI will be displaying wrapped up in a tuple
         :param ip: the IP of the machine to get the details for
         :return: a ClientInfo namedtuple
         """
-        return ClientInfo(self.get_beacon_type(ip), self.get_os(ip), self.get_hostname(ip),
-                          ip, self.get_last_active(ip), self.get_queued_commands(ip))
+        try:
+            client = ClientInfo(self.get_beacon_type(uuid), self.get_os(uuid), self.get_hostname(uuid),
+                          uuid, self.get_last_active(uuid), self.get_queued_commands(uuid))
+            return client
+        except Exception as e:
+            return ClientInfo("ERROR", "ERROR", "ERROR", uuid, "ERROR", [])

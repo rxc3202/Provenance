@@ -30,22 +30,22 @@ class ProvenanceServer(UDPServer, ModelInterface):
         self.discovery = discovery
         self._backup_dir = backup_dir
 
-        if restore:
-            self.logger.critical(f"Restoring backup from {restore[0]}")
-            self.restore(restore[0])
-        else:
-            # Get the list of IPs we're supposed to interact with
-            if not discovery:
-                # via the whitelist argument
-                if whitelist:
-                    hosts = parse_whitelist(whitelist)
-                else:
-                    # or manually by command line (eww)
-                    hosts = get_whitelist()
-                for h in hosts:
-                    if '/' not in h[0]:
-                        self.add_host(ip=h[0], hostname=h[1], handler=h[2])
-                    self.whitelist.add(h[0])
+        # if restore:
+        #     self.logger.critical(f"Restoring backup from {restore[0]}")
+        #     self.restore(restore[0])
+        # else:
+        #     # Get the list of IPs we're supposed to interact with
+        #     if not discovery:
+        #         # via the whitelist argument
+        #         if whitelist:
+        #             hosts = parse_whitelist(whitelist)
+        #         else:
+        #             # or manually by command line (eww)
+        #             hosts = get_whitelist()
+        #         for h in hosts:
+        #             if '/' not in h[0]:
+        #                 self.add_host(ip=h[0], hostname=h[1], handler=h[2])
+        #             self.whitelist.add(h[0])
 
 
     @staticmethod
@@ -92,58 +92,60 @@ class ProvenanceServer(UDPServer, ModelInterface):
 
     def finish_request(self, request, client_address):
         uuid = DNSClient.parse_uuid(request)
-        return self.machines[uuid].handle(request, client_address)
+        return self.machines[uuid].handle(uuid, request, client_address)
 
-    # TODO: add function typing for ModelController Methods
+    # # TODO: add function typing for ModelController Methods
     def restore(self, file):
-        if not os.path.exists(file):
-            print(f"File not found! ({file})")
-            sys.exit(1)
-        try:
-            with open(file, 'r') as file:
-                data = json.load(file)
-        except json.JSONDecodeError:
-            self.logger.critical(f"Could not restore from {file}")
-            return
+         pass
+    #     if not os.path.exists(file):
+    #         print(f"File not found! ({file})")
+    #         sys.exit(1)
+    #     try:
+    #         with open(file, 'r') as file:
+    #             data = json.load(file)
+    #     except json.JSONDecodeError:
+    #         self.logger.critical(f"Could not restore from {file}")
+    #         return
 
-        for machine_dict in data:
-            ip = machine_dict["ip"]
-            client = self.add_host(ip)
-            client.decode(machine_dict)
+    #     for machine_dict in data:
+    #         uuid = machine_dict["uuid"]
+    #         client = self.add_host(uuid)
+    #         client.decode(machine_dict)
 
     def backup(self, fmt="%Y-%m-%d_%H~%M~%S", failover=True):
-        # If there are no machines being tracked we don't care
-        if not self.machines.keys():
-            return
+        pass
+    #     # If there are no machines being tracked we don't care
+    #     if not self.machines.keys():
+    #         return
 
-        def save_failure(d):
-            if not failover:
-                self.logger.critical(f"Backup failover is off. Backup not created.")
-                return
+    #     def save_failure(d):
+    #         if not failover:
+    #             self.logger.critical(f"Backup failover is off. Backup not created.")
+    #             return
 
-            p = os.path.join(d, f"provenance_backup.bak")
-            with open(p, "w") as out:
-                json.dump(encodings, out)
-            self.logger.critical(f"Creating safe backup file without errors: {p}")
+    #         p = os.path.join(d, f"provenance_backup.bak")
+    #         with open(p, "w") as out:
+    #             json.dump(encodings, out)
+    #         self.logger.critical(f"Creating safe backup file without errors: {p}")
 
-        encodings = []
-        for m in self.machines.values():
-            encoding = m.encode()
-            encodings.append(encoding)
-        date = datetime.now().strftime(fmt)
-        cwd = os.getcwd()
-        filename = f"Provenance_{date}.bak"
-        path = os.path.join(cwd, self._backup_dir, filename)
-        if not os.path.exists(os.path.dirname(path)):
-            os.makedirs(os.path.dirname(path))
-        try:
-            with open(path, "w") as file:
-                json.dump(encodings, file)
-            self.logger.critical(f"Backup saved to: {path}")
-        except OSError as e:
-            self.logger.error("Couldn't create backup file due OSError")
-            self.logger.debug("Windows don't allow certain characters in filenames.")
-            save_failure(cwd)
+    #     encodings = []
+    #     for m in self.machines.values():
+    #         encoding = m.encode()
+    #         encodings.append(encoding)
+    #     date = datetime.now().strftime(fmt)
+    #     cwd = os.getcwd()
+    #     filename = f"Provenance_{date}.bak"
+    #     path = os.path.join(cwd, self._backup_dir, filename)
+    #     if not os.path.exists(os.path.dirname(path)):
+    #         os.makedirs(os.path.dirname(path))
+    #     try:
+    #         with open(path, "w") as file:
+    #             json.dump(encodings, file)
+    #         self.logger.critical(f"Backup saved to: {path}")
+    #     except OSError as e:
+    #         self.logger.error("Couldn't create backup file due OSError")
+    #         self.logger.debug("Windows don't allow certain characters in filenames.")
+    #         save_failure(cwd)
 
     def shutdown(self):
         pass
@@ -155,53 +157,55 @@ class ProvenanceServer(UDPServer, ModelInterface):
     def get_hosts(self):
         return self.machines.keys()
 
-    def add_host(self, ip, hostname=None, handler=None):
+    def add_host(self, uuid, hostname=None, handler=None):
         new_handler = self.RequestHandlerClass(
-            request=None, client_address=(ip, None), serverinfo=self.server_address,
-            hostname=hostname, handler=handler or "DNS"
+            request=None, client_address=(None, None),
+            serverinfo=self.server_address,
+            hostname=hostname,
+            uuid=uuid
         )
-        if ip not in self.machines.keys():
-            self.machines[ip] = new_handler
+        if uuid not in self.machines.keys():
+            self.machines[uuid] = new_handler
             return new_handler
         return None
 
-    def get_queued_commands(self, host):
-        machine = self.machines[host]
+    def get_queued_commands(self, uuid):
+        machine = self.machines[uuid]
         return machine.queued_commands
 
-    def get_sent_commands(self, host):
-        machine = self.machines[host]
+    def get_sent_commands(self, uuid):
+        machine = self.machines[uuid]
         return machine.get_sent_commands()
 
-    def queue_command(self, ctype, ip, cmd):
-        machine = self.machines[ip]
+    def queue_command(self, ctype, uuid, cmd):
+        machine = self.machines[uuid]
         machine.queue_command(ctype, cmd)
 
-    def remove_command(self, ip, cmd_id):
-        machine = self.machines[ip]
+    def remove_command(self, uuid, cmd_id):
+        machine = self.machines[uuid]
         machine.remove_command(cmd_id)
 
-    def remove_host(self, ip):
+    def remove_host(self, uuid):
         pass
 
-    def get_last_active(self, ip):
-        machine = self.machines[ip]
+    def get_last_active(self, uuid):
+        machine = self.machines[uuid]
         return machine.last_active
 
-    def get_hostname(self, ip):
-        machine = self.machines[ip]
+    def get_hostname(self, uuid):
+        machine = self.machines[uuid]
         return machine.hostname
 
-    def get_beacon(self, ip):
-        machine = self.machines[ip]
+    def get_beacon(self, uuid):
+        machine = self.machines[uuid]
         return machine.beacon
 
-    def get_os(self, ip):
-        machine = self.machines[ip]
+    def get_os(self, uuid):
+        machine = self.machines[uuid]
         return machine.os
 
-    def get_machine(self, ip: str):
-        return self.machines[ip]
+    def get_machine(self, uuid: str):
+        return self.machines[uuid]
 
 
 class ThreadedProvenanceServer(ProvenanceServer):
@@ -228,7 +232,7 @@ class ThreadedProvenanceServer(ProvenanceServer):
         addr, port = client_address
         uuid = DNSClient.parse_uuid(request)
         if not uuid in self.machines.keys():
-            self.logger.info(f"New machine added: {addr}")
+            self.logger.info(f"New machine added: {uuid}")
             self.machines[uuid] = self.RequestHandlerClass(
                 request=request,
                 client_address=client_address,
