@@ -77,6 +77,7 @@ class MainMenu(Frame):
 
     def _reload_page(self):
         machines = self.model.displayed_machines
+        # machines = [("1", "2", "3", "4", "5", "6")]
         # TODO: make a more efficient way to propogate changes so we dont reload the list every time
         tmp = self._machine_list_widget.value
         self._machine_list_widget.options = [(x, i) for i, x in enumerate(machines)]

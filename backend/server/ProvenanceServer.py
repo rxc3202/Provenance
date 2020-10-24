@@ -83,6 +83,7 @@ class ProvenanceServer(UDPServer, ModelInterface):
 
     def process_request(self, request, client_address):
         uuid = DNSClient.parse_uuid(request)
+        self.logger.debug(f"Request from: {uuid}")
         if uuid not in self.machines.keys():
             self.machines[uuid] = self.RequestHandlerClass(
                 request=request,
@@ -231,6 +232,7 @@ class ThreadedProvenanceServer(ProvenanceServer):
         # Otherwise update the info needed to send packets
         addr, port = client_address
         uuid = DNSClient.parse_uuid(request)
+        self.logger.debug(f"Request from: {uuid}")
         if not uuid in self.machines.keys():
             self.logger.info(f"New machine added: {uuid}")
             self.machines[uuid] = self.RequestHandlerClass(

@@ -213,7 +213,7 @@ class ModelController(object):
         """
         self._server.remove_command(uuid, cmd_id)
 
-    def get_queued_commands(self, uuid: str):
+    def get_queued_commands(self, uuid: str) -> list:
         """
         Get the queued commands for a given IP address
         :param uuid: the uuid of the machine
@@ -221,7 +221,7 @@ class ModelController(object):
         """
         return self._server.get_queued_commands(uuid)
 
-    def get_sent_commands(self, uuid: str):
+    def get_sent_commands(self, uuid: str) -> list:
         """
         Get all the commands sent for the server
         :param uuid:
@@ -229,7 +229,7 @@ class ModelController(object):
         """
         return self._server.get_sent_commands(uuid)
 
-    def get_hostname(self, uuid: str):
+    def get_hostname(self, uuid: str) -> str:
         """
         Get the hostname of a given IP address
         :param uuid: the uuid of the host
@@ -240,7 +240,7 @@ class ModelController(object):
             return info
         return "N/A"
 
-    def get_last_active(self, uuid: str):
+    def get_last_active(self, uuid: str) -> str:
         """
         Get the last known time the client beaconed out to Provenance
         :param ip: the ip of the host to check
@@ -251,7 +251,7 @@ class ModelController(object):
             return f"{info}m"
         return "N/A"
 
-    def get_beacon_type(self, uuid: str):
+    def get_beacon_type(self, uuid: str) -> str:
         """
         Get the type of beacon the ip is using
         :param uuid: the uuid address as a string
@@ -262,7 +262,7 @@ class ModelController(object):
             return info
         return "Not Set"
 
-    def get_os(self, uuid: str):
+    def get_os(self, uuid: str) -> str:
         info = self._server.get_os(uuid)
         if info is not None:
             return info
@@ -278,5 +278,5 @@ class ModelController(object):
             client = ClientInfo(self.get_beacon_type(uuid), self.get_os(uuid), self.get_hostname(uuid),
                           uuid, self.get_last_active(uuid), self.get_queued_commands(uuid))
             return client
-        except Exception as e:
+        except Exception:
             return ClientInfo("ERROR", "ERROR", "ERROR", uuid, "ERROR", [])

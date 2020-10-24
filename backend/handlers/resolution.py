@@ -215,7 +215,7 @@ class Resolution(ProtocolHandler):
         _, constructor, msg_size = Records.TXT.value
         rr_type = query.questions[0].qtype
         chunks = [f"{data[i:i+msg_size]}" for i in range(0, len(data), msg_size)] 
-        self.logger.debug(chunks)
+        #self.logger.debug(chunks)
         for i, chunk in enumerate(chunks):
             answer = RR(
                     rname=query.get_q().get_qname(),
