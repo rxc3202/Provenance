@@ -157,5 +157,11 @@ class ModelInterface(ABC):
         """
         raise NotImplementedError("get_ip() must be implemented in Model's concrete subclass")
 
-
-
+    @abstractmethod
+    def get_state(self, uuid: str) -> str:
+        """
+        Get the actual Provenance client instance
+        :param uuid: the uuid of the host
+        :return: the current state of the client as kept internally by the server
+        """
+        raise NotImplementedError("get_ip() must be implemented in Model's concrete subclass")

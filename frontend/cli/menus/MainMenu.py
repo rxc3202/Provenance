@@ -60,8 +60,8 @@ class MainMenu(Frame):
     def _init_machine_list_widget(self):
         machines = self.model.displayed_machines
 
-        fields = ["Type", "OS", "Hostname", "IP", "Last Active", "Next Command"]
-        widths = ["<10%", "<10%", "<25%", "<15%", "<10%", "<30%"]
+        fields = ["Type", "State", "OS", "Hostname", "IP", "Last Active", "Next Command"]
+        widths = ["<10%", "<10%", "<10%", "<20%", "<10%", "<10%", "<30%"]
         # old = [f"<{100 // len(fields)}%" for _ in fields]
         return MultiColumnListBox(
             height=Widget.FILL_FRAME,

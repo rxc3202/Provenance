@@ -64,7 +64,7 @@ class ModelController(object):
         for m in self._displayed_machines:
             info = self.get_machine_info(m.uuid)
             next_command = info.commands[0].command if info.commands else "N/A"
-            tup = (info.beacon, info.os, info.hostname, info.ip, info.active, next_command, info.uuid)
+            tup = (info.beacon, info.state, info.os, info.hostname, info.ip, info.active, next_command, info.uuid)
             displayed_info.append(tup)
         return displayed_info
 
@@ -272,6 +272,10 @@ class ModelController(object):
         info = self._server.get_ip(uuid)
         return info
 
+    def get_state(self, uuid: str) -> str:
+        info = self._server.get_state(uuid)
+        return info
+
     def get_machine_info(self, uuid: str):
         """
         Return the information that the UI will be displaying wrapped up in a tuple
@@ -281,12 +285,14 @@ class ModelController(object):
         try:
             client = ClientInfo(
                 self.get_beacon_type(uuid),
-                self.get_os(uuid), self.get_hostname(uuid),
+                self.get_state(uuid),
+                self.get_os(uuid),
+                self.get_hostname(uuid),
                 self.get_ip(uuid),
                 self.get_last_active(uuid),
                 self.get_queued_commands(uuid),
                 uuid)
             return client
         except Exception as e:
-            self._server.logger.debug(str(e))
-            return ClientInfo("BEACON", "OS", "HOST", "IP", "ACTIVE", [], "UUID")
+            self._server.logger.info(str(e))
+            return ClientInfo("BEACON", "STATE", "OS", "HOST", "IP", "ACTIVE", [], "UUID")

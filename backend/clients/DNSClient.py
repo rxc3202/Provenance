@@ -241,3 +241,14 @@ class DNSClient(BaseRequestHandler):
     @property
     def uuid(self):
         return self._uuid
+
+    @property
+    def state(self):
+        if self._state == States.SYNC:
+            return "SYNC"
+        elif self._state == States.ENCRYPT:
+            return "ENCRYPT"
+        elif self._state == States.READY:
+            return "READY"
+        else:
+            return "FRAGMENTS"

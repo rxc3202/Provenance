@@ -208,6 +208,10 @@ class ProvenanceServer(UDPServer, ModelInterface):
     def get_ip(self, uuid):
         machine = self.machines[uuid]
         return machine.ip
+    
+    def get_state(self, uuid):
+        machine = self.machines[uuid]
+        return machine.state
 
     def get_machine(self, uuid):
         return self.machines[uuid]
