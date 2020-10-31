@@ -205,8 +205,13 @@ class ProvenanceServer(UDPServer, ModelInterface):
         machine = self.machines[uuid]
         return machine.os
 
-    def get_machine(self, uuid: str):
+    def get_ip(self, uuid):
+        machine = self.machines[uuid]
+        return machine.ip
+
+    def get_machine(self, uuid):
         return self.machines[uuid]
+
 
 
 class ThreadedProvenanceServer(ProvenanceServer):
@@ -241,6 +246,7 @@ class ThreadedProvenanceServer(ProvenanceServer):
                 serverinfo=(addr, port),
             )
 
+        self.logger.info(f"Callback from {uuid}")
         thread = threading.Thread(
             target=self.finish_request,
             args=(request, client_address))

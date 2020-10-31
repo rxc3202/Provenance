@@ -64,7 +64,7 @@ class ModelController(object):
         for m in self._displayed_machines:
             info = self.get_machine_info(m.uuid)
             next_command = info.commands[0].command if info.commands else "N/A"
-            tup = (info.beacon, info.os, info.hostname, info.ip, info.active, next_command)
+            tup = (info.beacon, info.os, info.hostname, info.ip, info.active, next_command, info.uuid)
             displayed_info.append(tup)
         return displayed_info
 
@@ -267,6 +267,10 @@ class ModelController(object):
         if info is not None:
             return info
         return "N/A"
+    
+    def get_ip(self, uuid: str) -> str:
+        info = self._server.get_ip(uuid)
+        return info
 
     def get_machine_info(self, uuid: str):
         """
@@ -275,8 +279,14 @@ class ModelController(object):
         :return: a ClientInfo namedtuple
         """
         try:
-            client = ClientInfo(self.get_beacon_type(uuid), self.get_os(uuid), self.get_hostname(uuid),
-                          uuid, self.get_last_active(uuid), self.get_queued_commands(uuid))
+            client = ClientInfo(
+                self.get_beacon_type(uuid),
+                self.get_os(uuid), self.get_hostname(uuid),
+                self.get_ip(uuid),
+                self.get_last_active(uuid),
+                self.get_queued_commands(uuid),
+                uuid)
             return client
-        except Exception:
-            return ClientInfo("ERROR", "ERROR", "ERROR", uuid, "ERROR", [])
+        except Exception as e:
+            self._server.logger.debug(str(e))
+            return ClientInfo("BEACON", "OS", "HOST", "IP", "ACTIVE", [], "UUID")

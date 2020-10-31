@@ -37,6 +37,7 @@ class DNSClient(BaseRequestHandler):
         self._key: str = "testKey"
         self._protocol_handler = None
         self._state = States.SYNC
+        self._ip = "?.?.?.?"
         
         self._protocol_handler = Resolution(
             ip=client_address[0],
@@ -83,7 +84,7 @@ class DNSClient(BaseRequestHandler):
             "uuid:": self._uuid,
             "os": self.os,
             "hostname": self._hostname,
-            "ip": self.ip,
+            "ip": self._ip,
             "active": self.last_active,
             "state": self._state.value,
             "key": self._key,
@@ -229,9 +230,7 @@ class DNSClient(BaseRequestHandler):
 
     @property
     def ip(self):
-        if not self.client_address:
-            return None
-        return self.client_address[0]
+        return self._ip
 
     @property
     def beacon(self):

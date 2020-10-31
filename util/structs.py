@@ -119,4 +119,4 @@ A simple structure allowing for a more intuitive semantic understanding
 of the information queried from server representation of the clients rather than
 accessing them using indices
 """
-ClientInfo = namedtuple("ClientInfo", ["beacon", "os", "hostname", "ip", "active", "commands"])
+ClientInfo = namedtuple("ClientInfo", ["beacon", "os", "hostname", "ip", "active", "commands", "uuid"])

@@ -65,87 +65,97 @@ class ModelInterface(ABC):
     # ===========================================
 
     @abstractmethod
-    def queue_command(self, ctype: str, ip: str, command: str):
+    def queue_command(self, ctype: str, uuid: str, command: str):
         """
         Queue a single command on the given host
         :param ctype: the type of the command as a string
-        :param ip: the IP of the host
+        :param uuid: the uuid of the host
         :param command: the powershell command to add
         :return: None
         """
-        raise NotImplementedError("queued_command() must be implemented in concrete subclass")
+        raise NotImplementedError("queued_command() must be implemented in Model's concrete subclass")
 
     @abstractmethod
-    def remove_command(self, ip: str, cmd_id):
+    def remove_command(self, uuid: str, cmd_id):
         """
         Remove a single command on the given host
-        :param ip: the IP of the host
+        :param uuid: the uuid of the host
         :param command: the powershell command to remove
         :return: None
         """
-        raise NotImplementedError("remove_command() must be implemented in concrete subclass")
+        raise NotImplementedError("remove_command() must be implemented in Model's concrete subclass")
 
     @abstractmethod
-    def get_hostname(self, ip: str):
+    def get_hostname(self, uuid: str) -> str:
         """
         Get the hostname of a given IP address
-        :param ip: the ip of the host
+        :param uuid: the uuid of the host
         :return: a string representing the hostname else N/A
         """
-        raise NotImplementedError("get_hostname() must be implemented in concrete subclass")
+        raise NotImplementedError("get_hostname() must be implemented in Model's concrete subclass")
 
     @abstractmethod
-    def get_queued_commands(self, ip: str):
+    def get_queued_commands(self, uuid: str) -> str:
         """
         Get the queued commands for a given IP address
-        :param ip: the string IP address of the machine
+        :param uuid: the uuid of the host
         :return: a list of Command structs
         """
-        raise NotImplementedError("get_queued_commands() must be implemented in concrete subclass")
+        raise NotImplementedError("get_queued_commands() must be implemented in Model's concrete subclass")
 
     @abstractmethod
-    def get_sent_commands(self, ip: str):
+    def get_sent_commands(self, uuid: str) -> str:
         """
         Get the queued commands for a given IP address
-        :param ip: the string IP address of the machine
+        :param uuid: the uuid of the host
         :return: a list of Command structs
         """
-        raise NotImplementedError("get_sent_commands() must be implemented in concrete subclass")
+        raise NotImplementedError("get_sent_commands() must be implemented in Model's concrete subclass")
 
     @abstractmethod
-    def get_last_active(self, ip: str):
+    def get_last_active(self, uuid: str) -> str:
         """
         Get the last known time the client beaconed out to Provenance
-        :param ip: the ip of the host to check
+        :param uuid: the uuid of the host
         :return: a string in minutes
         """
-        raise NotImplementedError("get_last_active() must be implemented in concrete subclass")
+        raise NotImplementedError("get_last_active() must be implemented in Model's concrete subclass")
 
     @abstractmethod
-    def get_beacon(self, ip: str):
+    def get_beacon(self, uuid: str) -> str:
         """
         Get the type of beacon being used by the host
-        :param ip: the ip
+        :param uuid: the uuid of the host
         :return: a string representing the beacon type
         """
-        raise NotImplementedError("get_beacon() must be implemented in concrete subclass")
+        raise NotImplementedError("get_beacon() must be implemented in Model's concrete subclass")
 
     @abstractmethod
-    def get_os(self, ip: str):
+    def get_os(self, uuid: str) -> str:
         """
         Get the os of the machine in question
-        :param ip: the string representing the IP
+        :param uuid: the uuid of the host
         :return: a string reprsenting the OS
         """
-        raise NotImplementedError("get_beacon() must be implemented in concrete subclass")
+        raise NotImplementedError("get_beacon() must be implemented Model's in concrete subclass")
 
     @abstractmethod
-    def get_machine(self, ip: str):
+    def get_machine(self, uuid: str) -> str:
         """
         Get the actual Provenance client instance
-        :param ip: the string of the ip
+        :param uuid: the uuid of the host
         :return:
         """
-        raise NotImplementedError("get_machine() must be implemented in concrete subclass")
+        raise NotImplementedError("get_machine() must be implemented Model's in concrete subclass")
+
+    @abstractmethod
+    def get_ip(self, uuid: str) -> str:
+        """
+        Get the actual Provenance client instance
+        :param uuid: the uuid of the host
+        :return:
+        """
+        raise NotImplementedError("get_ip() must be implemented in Model's concrete subclass")
+
 
 
