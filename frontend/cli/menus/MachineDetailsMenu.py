@@ -17,8 +17,8 @@ class MachineDetailsMenu(Frame):
         self.set_theme(ui.theme)
 
         # Initialize Widgets
-        self._confirm_button = Button("Finish", self._confirm)
-        self._cancel_button = Button("Cancel", self._cancel)
+        self._confirm_button = Button("Add Command", self._button1)
+        self._cancel_button = Button("Finish", self._button2)
         self._hostname_field = Text("Hostname", name="hostname", disabled=True)
         self._ip_field = Text("IP Address", name="ip", disabled=True)
         self._beacon_field = Text("Beacon Type", name="beacon", disabled=True)
@@ -70,11 +70,10 @@ class MachineDetailsMenu(Frame):
         else:
             self.data = self.reset_data
 
-    def _confirm(self):
-        self._model.reset_current()
-        raise NextScene("Main")
+    def _button1(self):
+        raise NextScene("Add Command Specific")
 
-    def _cancel(self):
+    def _button2(self):
         self._model.reset_current()
         raise NextScene("Main")
 

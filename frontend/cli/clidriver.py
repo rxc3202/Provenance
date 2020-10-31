@@ -30,6 +30,7 @@ class ProvenanceCLI(object):
                 Scene([DeleteMachineMenu(screen, cls.model, cls.ui)], -1, name="Delete Host"),
                 Scene([MachineDetailsMenu(screen, cls.model, cls.ui)], -1, name="View Host"),
                 Scene([AddCommandMenu(screen, cls.model, cls.ui)], -1, name="Add Command"),
+                Scene([AddCommandMenuSpecific(screen, cls.model, cls.ui)], -1, name="Add Command Specific"),
                 Scene([SettingsMenu(screen, cls.model, cls.logger, cls.ui)], -1, name="Settings")
             ]
             screen.play(scenes, stop_on_resize=True, start_scene=scene)

@@ -43,8 +43,8 @@ def main():
         else:
             # We don't want to use this
             sys.exit(0)
-            server = ProvenanceServer(socket, ProvenanceClientHandler, args)
-            server.serve_forever()
+            # server = ProvenanceServer(socket, ProvenanceClientHandler, args)
+            # server.serve_forever()
     except KeyboardInterrupt:
         sys.exit(0)
 

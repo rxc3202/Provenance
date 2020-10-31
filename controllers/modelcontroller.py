@@ -19,8 +19,8 @@ class ModelController(object):
         """ The amount of times in seconds the controller will query info from the server """
         self._refresh_interval = 2
 
-        for ip in self._server.get_hosts():
-            m = self._server.get_machine(ip)
+        for uuid in self._server.get_hosts():
+            m = self._server.get_machine(uuid)
             self._displayed_machines.append(m)
 
     # Backend Commands
