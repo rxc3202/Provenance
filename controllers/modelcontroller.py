@@ -40,15 +40,15 @@ class ModelController(object):
         """
         self._current_machine = None
 
-    def select_current(self, ip: str):
+    def select_current(self, uuid: str):
         """
         Set the currently selected machine to the ip if it is being tracked
         by the server
-        :param ip: the ip to add as a string
+        :param uuid: the uuid of the host
         :return:
         """
-        if ip in self._server.get_hosts():
-            self._current_machine = ip
+        if uuid in self._server.get_hosts():
+            self._current_machine = uuid
         else:
             self._current_machine = None
 

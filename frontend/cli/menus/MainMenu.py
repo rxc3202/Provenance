@@ -102,7 +102,7 @@ class MainMenu(Frame):
         # Unpack the data into a more usable struct
         machine = ClientInfo(*options[0])
         # Select the machine
-        self.model.select_current(machine.ip)
+        self.model.select_current(machine.uuid)
         raise NextScene("View Host")
 
     def _add_host(self):
