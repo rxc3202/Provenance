@@ -5,6 +5,7 @@ from enum import Enum
 from collections import deque
 import logging
 from random import choice
+import base64
 from string import ascii_lowercase
 
 retransmit = {
@@ -78,10 +79,12 @@ class Resolution(ProtocolHandler):
             # reverse the fqdn and split on "." for easier command fetching
             query = str(q.get_qname()).split(".")[::-1]
             if query[3] == Domains.SYNC.value:
-                platform, hostname, uuid = query[5], query[4], query[6]
+                platform, hostname = query[5], query[4]
+                ip = str(base64.b64decode(query[6]), "utf-8")
+                uuid = query[7]
                 self._send_data(request, port, Opcodes.ACK.value, None)
                 self.fragments.clear()
-                return (platform, hostname, uuid)
+                return (ip, platform, hostname, uuid)
             else:
                 # Issue a SYNC-REQUEST if server went down and needs to resync
                 self._send_data(request, port, Opcodes.SYNCREQ.value, None)

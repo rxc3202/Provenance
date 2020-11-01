@@ -241,8 +241,7 @@ class ThreadedProvenanceServer(ProvenanceServer):
         # Otherwise update the info needed to send packets
         addr, port = client_address
         uuid = DNSClient.parse_uuid(request)
-        self.logger.debug(f"Request from: {uuid}")
-        if not uuid in self.machines.keys():
+        if uuid and uuid not in self.machines.keys():
             self.logger.info(f"New machine added: {uuid}")
             self.machines[uuid] = self.RequestHandlerClass(
                 request=request,

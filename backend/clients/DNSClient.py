@@ -121,9 +121,10 @@ class DNSClient(BaseRequestHandler):
         if self._state == States.SYNC:
             response = self._protocol_handler.synchronize(self.request, port)
             if response:
-                self._os = response[0]
-                self._hostname = response[1]
-                self._uuid = response[2]
+                self._ip = response[0]
+                self._os = response[1]
+                self._hostname = response[2]
+                self._uuid = response[3]
                 self._state = States.ENCRYPT
                 self.logger.debug(f"{self._hostname}: SYNC CONFIRMED")
 

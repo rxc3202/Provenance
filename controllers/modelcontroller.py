@@ -293,6 +293,5 @@ class ModelController(object):
                 self.get_queued_commands(uuid),
                 uuid)
             return client
-        except Exception as e:
-            self._server.logger.info(str(e))
+        except Exception:
             return ClientInfo("BEACON", "STATE", "OS", "HOST", "IP", "ACTIVE", [], "UUID")
