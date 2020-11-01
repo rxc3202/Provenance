@@ -2,6 +2,7 @@ from socketserver import BaseRequestHandler
 from backend.handlers.protocolhandler import ProtocolHandler
 from backend.handlers.resolution import Resolution
 from collections import deque
+from codecs import decode
 from datetime import datetime
 from enum import Enum
 import logging

